@@ -23,9 +23,9 @@ class Average
         int count = 0;
 
         System.out.println();
-        System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––");
+        System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––––");
         System.out.println("GRADE AVERAGER");
-        System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––");
+        System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––––");
 
         // Prompts user for real number input between 0 and 100
         while (val >= 0 && val <= 100)
@@ -70,12 +70,17 @@ class Average
 		if (count > 0)
 		{
 			avg = sum / count;
-            System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––");
+            System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––––");
 			System.out.println("Average: " + avg);
 			System.out.println("Sum: " + sum);
 			System.out.println("Number of grades entered: " + count);
-            System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––");
-            System.out.println();
+            System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––––");
 		}
+        else
+        {
+            System.out.println("Must have at least one valid grade. Exiting program.");
+            System.out.println("––––––––––––––––––––––––––––––––––––––––––––––––––––");
+        }
+        System.out.println();
     }
 }
