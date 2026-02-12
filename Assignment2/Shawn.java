@@ -1,61 +1,75 @@
-static class Word {
+static class Word
+{
 	String word;
 	int count;
 
-	Word(String word) {
+	Word(String word)
+	{
 		this.word = word;
 		this.count = 1;
 	}
 }
 
-if (!quitProgram) {
-	try {
-		while ((line = inputFile.readLine()) != null) {
+if (!quitProgram)
+{
+	try
+	{
+		while ((line = inputFile.readLine()) != null)
+		{
 			StringTokenizer tokenizer = new StringTokenizer(line, " \t");
 
-			while (tokenizer.hasMoreTokens()) {
+			while (tokenizer.hasMoreTokens())
+			{
 				String token = tokenizer.nextToken();
 				int index = 0;
 
-				while (index < token.length()) {
+				while (index < token.length())
+				{
 					char ch = token.charAt(index);
 
 					// Process number
-					if (Character.isDigit(ch) ||
-					(ch == '-' && index + 1 < token.length()
-					&& Character.isDigit(token.charAt(index + 1)))) {
-
+					if (
+						Character.isDigit(ch) ||
+						(ch == '-' && index + 1 < token.length() &&
+						Character.isDigit(token.charAt(index + 1)))
+					) {
 						int start = index;
 						index++; 
 
-						while (index < token.length() &&
-							Character.isDigit(token.charAt(index))) {
+						while (index < token.length() && Character.isDigit(token.charAt(index)))
+						{
 							index++;
 						}
 
 						String numberStr = token.substring(start, index);
 
-						try {
+						try
+						{
 							integerSum += Long.parseLong(numberStr);
-						} catch (NumberFormatException e) {
+						}
+						catch (NumberFormatException e)
+						{
 							System.out.println("Invalid number format: " + numberStr);
 						}
 					}
 
 					// Process word
-					else if (Character.isLetter(ch)) {
+					else if (Character.isLetter(ch))
+					{
 						int start = index;
 						int apostropheCount = 0;
 						index++;
 
-						while (index < token.length()) {
-
+						while (index < token.length())
+						{
 							char c = token.charAt(index);
 
-							if (Character.isLetterOrDigit(c) || c == '-') {
+							if (Character.isLetterOrDigit(c) || c == '-')
+							{
 								index++;
 							}
-							else if (c == '\'' && apostropheCount == 0) {
+							else if (c == '\'' && apostropheCount == 0)
+							{
 								apostropheCount++;
 								index++;
 							}
@@ -71,21 +85,25 @@ if (!quitProgram) {
 						boolean found = false;
 						int i = 0;
 
-						while (i < uniqueWordCount && !found) {
-							if (words[i].word.equals(wordStr)) {
+						while (i < uniqueWordCount && !found)
+						{
+							if (words[i].word.equals(wordStr))
+							{
 								words[i].count++;
 								found = true;
 							}
 							i++;
 						}
 
-						if (!found && uniqueWordCount < MAX_WORDS) {
+						if (!found && uniqueWordCount < MAX_WORDS)
+						{
 							words[uniqueWordCount] = new Word(wordStr);
 							uniqueWordCount++;
 						}
 					}
 
-					else {
+					else
+					{
 						index++;
 					}
 				}
@@ -96,7 +114,8 @@ if (!quitProgram) {
 		outputFile.println("WORD COUNT REPORT");
 		outputFile.println("----------------------------");
 
-		for (int i = 0; i < uniqueWordCount; i++) {
+		for (int i = 0; i < uniqueWordCount; i++)
+		{
 			outputFile.printf("%-20s %d%n", words[i].word, words[i].count);
 		}
 
@@ -105,15 +124,20 @@ if (!quitProgram) {
 		outputFile.println("Sum of All Integers: " + integerSum);
 
 		System.out.println("Processing complete. Output written to " + outputFileName);
-	} catch (IOException e) {
+	}
+	catch (IOException e)
+	{
 		System.out.println("File processing error: " + e.getMessage());
 	}
 
 	// Close files safely
-	try {
+	try
+	{
 		if (inputFile != null) inputFile.close();
 		if (outputFile != null) outputFile.close();
-	} catch (IOException e) {
+	}
+	catch (IOException e)
+	{
 		System.out.println("Error closing files.");
 	}
 }
