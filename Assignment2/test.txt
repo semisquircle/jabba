@@ -1,0 +1,10 @@
+The quick brown fox jumps over the lazy dog. The fox is quick!
+I have 42 apples and -15 oranges in my basket.
+Don't forget the cat's toys - they're very important.
+Here are some numbers: 100 200 -50 and 999.
+The well-known phrase "can't stop won't stop" is popular.
+Testing hyphenated-words and multi-hyphen-test-word here.
+Numbers like 5280 feet in a mile, or -273 degrees Celsius.
+Words with digits like abc123 and test2day are counted.
+The word it's appears twice. It's a common contraction.
+Final test: 1 2 3 -4 -5 gives us a sum to calculate!
