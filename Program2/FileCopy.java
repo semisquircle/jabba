@@ -16,12 +16,12 @@ class FileCopy
     static class Word
     {
         String word;
-        int count;
+        int quant;
 
         Word(String word)
         {
             this.word = word;
-            this.count = 1;
+            this.quant = 1;
         }
     }
 
@@ -30,37 +30,18 @@ class FileCopy
         PrintWriter out = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-        String line;
-        String outLine;  
+        String line = null;
+        String outLine = null;
     
         FileReader fn = null;
         boolean fileFound = false;
-        
-        // Command line parameter handling 
-        if (args.length >= 1)
-        {
-            line = args[0]; // Take first parameter as input file
-        }
-        else 
-        {
-            line = null; 
-        }
 
-        if (args.length >= 2)
-        {
-            outLine = args[1]; // Take second parameter as output file
-        }
-        else 
-        {
-            outLine = null;
-        }
-
+        System.out.println();
         while (!fileFound)
         {
-            
             if (line == null)
             {
-                System.out.print("Enter your input filename or press enter to terminate: ");
+                System.out.print("Enter your input filename (or press Enter to quit): ");
                 line = br.readLine();
             }
             
@@ -221,7 +202,7 @@ class FileCopy
                                         {
                                             if (words[i].word.equals(wordStr))
                                             {
-                                                words[i].count++;
+                                                words[i].quant++;
                                                 found = true;
                                             }
                                             i++;
@@ -248,14 +229,15 @@ class FileCopy
 
                         for (int i = 0; i < uniqueWordCount; i++)
                         {
-                            out.printf("%-20s %d%n", words[i].word, words[i].count);
+                            out.println(words[i].word + "\t" + words[i].quant);
                         }
 
-                        out.println();
-                        out.println("Total Unique Words: " + uniqueWordCount);
-                        out.println("Sum of All Integers: " + integerSum);
+                        out.println("----------------------------");
+                        out.println("Total unique words: " + uniqueWordCount);
+                        out.println("Sum of all integers: " + integerSum);
 
                         System.out.println("Processing complete. Output written to " + outLine);
+                        System.out.println();
                         
                         in.close();
                         fn.close();
