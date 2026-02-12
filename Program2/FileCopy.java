@@ -1,5 +1,5 @@
 /*
-	Program name: Assignment 2, File Processing Program
+	Program name: Program 2, File Processing Program
 	Course: CMSC 3320, Technical Computing Using Java
 	Group: #3
 	Members:
@@ -34,53 +34,52 @@ class FileCopy
         String outLine;  
     
         FileReader fn = null;
-        boolean Found = false;
+        boolean fileFound = false;
         
-        //Command line parameter handling 
+        // Command line parameter handling 
         if (args.length >= 1)
         {
-            line = args[0];//Take first parameter as input file
+            line = args[0]; // Take first parameter as input file
         }
         else 
         {
             line = null; 
         }
 
-       
         if (args.length >= 2)
         {
-            outLine = args[1]; //Take second parameter as output file
+            outLine = args[1]; // Take second parameter as output file
         }
         else 
         {
             outLine = null;
         }
 
-        while(!Found)
+        while (!fileFound)
         {
             
-            if(line == null)
+            if (line == null)
             {
                 System.out.print("Enter your input filename or press enter to terminate: ");
                 line = br.readLine();
             }
             
-            if(line != null && !line.trim().isEmpty())
+            if (line != null && !line.trim().isEmpty())
             {
                 try
                 {
-                    fn = new FileReader(line); //Gets file from cmd line
+                    fn = new FileReader(line); // Gets file from cmd line
                     BufferedReader in = new BufferedReader(fn);
                     
                     // Only prompt for output filename if not provided via command line
-                    if(outLine == null)
+                    if (outLine == null)
                     {
                         System.out.print("Enter the output filename: ");
                         outLine = br.readLine();
                     
-                        if(outLine == null || outLine.trim().isEmpty())
+                        if (outLine == null || outLine.trim().isEmpty())
                         {
-                            outLine = "output.txt";  // Default output filename
+                            outLine = "output.txt"; // Default output filename
                             System.out.println("No output filename given. Using default: " + outLine);
                         }
                     }
@@ -89,30 +88,30 @@ class FileCopy
                     File outputFile = new File(outLine);
                     boolean outputReady = false;
                     
-                    while(!outputReady)
+                    while (!outputReady)
                     {
-                        if(outputFile.exists())
+                        if (outputFile.exists())
                         {
                             System.out.println("Output file already exists.");
                             System.out.print("Enter new filename, 'Replace' to backup and overwrite, or press Enter to quit: ");
                             String choice = br.readLine();
                             
-                            if(choice == null || choice.trim().isEmpty())
+                            if (choice == null || choice.trim().isEmpty())
                             {
     
                                 System.out.println("Quitting without opening files.");
                                 in.close();
                                 fn.close();
-                                Found = true;  // Exit main loop
-                                outputReady = true;  // Exit output file loop
+                                fileFound = true; // Exit main loop
+                                outputReady = true; // Exit output file loop
                             }
-                            else if(choice.trim().equalsIgnoreCase("Replace"))
+                            else if (choice.trim().equalsIgnoreCase("Replace"))
                             {
                                 // Backup existing file
                                 File backup = new File(outLine + ".bak");
                                 if(backup.exists())
                                 {
-                                    backup.delete();  // Delete old backup
+                                    backup.delete(); // Delete old backup
                                 }
                                 outputFile.renameTo(backup);
                                 System.out.println("Existing file backed up as: " + outLine + ".bak");
@@ -133,10 +132,9 @@ class FileCopy
                         }
                     }
                     
-                    
-                    if(!Found)
+                    if (!fileFound)
                     {
-                        out = new PrintWriter(new FileWriter(outLine)); //Creates output file
+                        out = new PrintWriter(new FileWriter(outLine)); // Creates output file
                         
                         // Initialize word array and counters
                         final int MAX_WORDS = 100;
@@ -147,7 +145,7 @@ class FileCopy
                         String fileLine;
                         
                         // Process each line from input file
-                        while((fileLine = in.readLine()) != null)
+                        while ((fileLine = in.readLine()) != null)
                         {
                             StringTokenizer tokenizer = new StringTokenizer(fileLine, " \t");
 
@@ -191,9 +189,9 @@ class FileCopy
                                     {
                                         int start = index;
                                         int apostropheCount = 0;
+                                        boolean buildingWord = true;
                                         index++;
-
-                                        while (index < token.length())
+                                        while (index < token.length() && buildingWord)
                                         {
                                             char c = token.charAt(index);
 
@@ -206,8 +204,10 @@ class FileCopy
                                                 apostropheCount++;
                                                 index++;
                                             }
-                                            else {
-                                                break;
+                                            else
+                                            {
+                                                index++;
+                                                buildingWord = false;
                                             }
                                         }
 
@@ -260,17 +260,17 @@ class FileCopy
                         in.close();
                         fn.close();
                         out.close();  
-                        Found = true;
+                        fileFound = true;
                     }
                 }
-                catch(FileNotFoundException e)
+                catch (FileNotFoundException e)
                 {
                     System.out.println("File not found. Please try again.");
-                    //Reset to prompt again on next iteration
+                    // Reset to prompt again on next iteration
                     line = null;
                     outLine = null;
                 }
-                catch(IOException e)  
+                catch (IOException e)  
                 {
                     System.out.println("Output printing unsuccessful");
                 }
@@ -278,7 +278,7 @@ class FileCopy
             else
             {
                 System.out.println("No filename entered. Exiting. ");
-                Found = true;
+                fileFound = true;
             }
         }
         
