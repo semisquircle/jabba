@@ -9,76 +9,294 @@
 */
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 
-public class FileCopyGUI {
+public class FileCopyGUI
+{
     private static final long serialVersionUID = 1L;
     
-    public static void main(String[] args) {
-        new Window();
+    public static void main(String[] args)
+    {
+        String startPath;
+
+        if (args.length > 0) {
+            startPath = args[0];
+        } else {
+            startPath = System.getProperty("user.dir");
+        }
+
+        new Window(startPath);
     }
 }
 
-class Window extends Frame implements ActionListener, WindowListener {
-    Label Heading1 = new Label("Chip");
-    Label Heading2 = new Label("Dale");
-    Label Information1 = new Label();
-    Label Information2 = new Label();
-    Button Button1 = new Button("Click Me");
-    Button Button2 = new Button("No, Click Me");
-    
-    GridBagConstraints c = new GridBagConstraints();
-    GridBagLayout displ = new GridBagLayout();
-    
-    public Window() {
-        double colWeight[] = {1, 3, 1};
-        double rowWeight[] = {1, 1};
-        int colWidth[] = {1, 3, 1};
-        int rowHeight[] = {1, 1};
-        displ.rowHeights = rowHeight;
-        displ.columnWidths = colWidth;
-        displ.columnWeights = colWeight;
-        displ.rowWeights = rowWeight;
-        this.setBounds(20, 20, 800, 200);
-        this.setLayout(displ);
-        c.anchor = GridBagConstraints.CENTER;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.gridwidth = 1;
-        c.gridheight = 1;
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 0;
-        c.gridy = 0;
-        displ.setConstraints(Heading1, c);
-        this.add(Heading1);
-        c.gridx = 1;
-        displ.setConstraints(Information1,c);
-        this.add(Information1);
-        c.gridx = 2;
-        displ.setConstraints(Button1, c);
-        this.add(Button1);
+class Window extends Frame implements ActionListener, WindowListener
+{
+    private List directoryList;
+    private Label sourceLabelTitle;
+    private Label sourceFileLabel;
+    private Button targetButton;
+    private Label targetPathLabel;
+    private Label fileNameLabel;
+    private TextField targetFileField;
+    private Button okButton;
+    private Label messageLabel;
 
-        c.gridx = 0;
-        c.gridy = 1;
-        displ.setConstraints(Heading2, c);
-        this.add(Heading2);
-        c.gridx = 1;
-        displ.setConstraints(Information2,c);
-        this.add(Information2);
-        c.gridx = 2;
-        displ.setConstraints(Button2, c);
-        this.add(Button2);
+    private File curDir;
+    private File sourceFile;
+    private File targetDir;
+    private boolean targetMode;
+    private boolean copyLocked;
 
-        this.setVisible(true);
-        Button1.addActionListener(this);
-        Button2.addActionListener(this);
-        this.addWindowListener(this);
+    public Window(String startPath)
+    {
+        File startDir = new File(startPath);
+        if (startDir.exists() && startDir.isDirectory()) {
+            curDir = startDir;
+        } else {
+            curDir = new File(System.getProperty("user.dir"));
+        }
+
+        targetMode = false;
+        copyLocked = false;
+
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        directoryList = new List(15);
+        directoryList.addActionListener(this);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 3;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        add(directoryList, gbc);
+
+        gbc.weighty = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        sourceLabelTitle = new Label("Source:");
+        gbc.gridx = 0;
+        add(sourceLabelTitle, gbc);
+
+        sourceFileLabel = new Label("");
+        gbc.gridx = 1;
+        gbc.gridwidth = 2;
+        add(sourceFileLabel, gbc);
+
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+
+        targetButton = new Button("Target");
+        targetButton.setEnabled(false);
+        targetButton.addActionListener(this);
+
+        gbc.gridx = 0;
+        add(targetButton, gbc);
+
+        targetPathLabel = new Label("");
+        gbc.gridx = 1;
+        gbc.gridwidth = 2;
+        add(targetPathLabel, gbc);
+
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+
+        fileNameLabel = new Label("File Name:");
+        gbc.gridx = 0;
+        add(fileNameLabel, gbc);
+
+        targetFileField = new TextField(20);
+        targetFileField.setEnabled(false);
+        targetFileField.addActionListener(this);
+        gbc.gridx = 1;
+        add(targetFileField, gbc);
+
+        okButton = new Button("Ok");
+        okButton.setEnabled(false);
+        okButton.addActionListener(this);
+        gbc.gridx = 2;
+        add(okButton, gbc);
+
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+
+        messageLabel = new Label("");
+        add(messageLabel, gbc);
+
+        setSize(600, 500);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                dispose();
+            }
+        });
+
+        updateDirectoryList();
+        setVisible(true);
+    }
+
+    private void updateDirectoryList()
+    {
+        directoryList.removeAll();
+        setTitle(curDir.getAbsolutePath());
+
+        File parent = curDir.getParentFile();
+
+        if (parent != null) {
+            directoryList.add("..");
+        }
+
+        File[] files = curDir.listFiles();
+
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                File f = files[i];
+
+                if (f.isDirectory()) {
+                    boolean hasChildDirectory = false;
+                    File[] sub = f.listFiles();
+                    if (sub != null) {
+                        for (int j = 0; j < sub.length; j++) {
+                            if (sub[j].isDirectory()) {
+                                hasChildDirectory = true;
+                            }
+                        }
+                    }
+
+                    if (hasChildDirectory) {
+                        directoryList.add(f.getName() + "+");
+                    } else {
+                        directoryList.add(f.getName());
+                    }
+                } else {
+                    directoryList.add(f.getName());
+                }
+            }
+        }
+    }
+
+    public void itemStateChanged(ItemEvent e)
+    {
+        if (copyLocked) {
+            return;
+        }
+
+        messageLabel.setText("");
+
+        String selected = directoryList.getSelectedItem();
+        File selectedFile;
+
+        if (selected.equals("..")) {
+            curDir = curDir.getParentFile();
+            updateDirectoryList();
+        } else {
+            String cleanName = selected.replace("+", "");
+            selectedFile = new File(curDir, cleanName);
+
+            if (selectedFile.isDirectory()) {
+                curDir = selectedFile;
+                updateDirectoryList();
+            } else {
+                if (!targetMode) {
+                    sourceFile = selectedFile;
+                    sourceFileLabel.setText(sourceFile.getName());
+                    targetButton.setEnabled(true);
+                } else {
+                    targetFileField.setText(selectedFile.getName());
+                    checkEnableOk();
+                }
+            }
+        }
+    }
+
+    public void actionPerformed(ActionEvent e)
+    {
+        messageLabel.setText("");
+
+        if (e.getSource() == targetButton) {
+            targetMode = true;
+            targetDir = curDir;
+            targetPathLabel.setText(curDir.getAbsolutePath());
+            targetFileField.setEnabled(true);
+        } else if (e.getSource() == okButton || e.getSource() == targetFileField) {
+            performCopy();
+        }
+    }
+
+    private void checkEnableOk()
+    {
+        if (targetFileField.getText().length() > 0) {
+            okButton.setEnabled(true);
+        }
+    }
+
+    private void performCopy()
+    {
+        if (sourceFile == null) {
+            messageLabel.setText("Source file not specified.");
+            return;
+        }
+
+        if (targetDir == null) {
+            messageLabel.setText("Target directory not specified.");
+            return;
+        }
+
+        if (targetFileField.getText().length() == 0) {
+            messageLabel.setText("Target file not specified.");
+            return;
+        }
+
+        File targetFile = new File(targetDir, targetFileField.getText());
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(sourceFile));
+            PrintWriter writer = new PrintWriter(targetFile);
+
+            int data = reader.read();
+
+            while (data != -1) {
+                writer.write(data);
+                data = reader.read();
+            }
+
+            reader.close();
+            writer.close();
+
+            messageLabel.setText("File Copied");
+
+            resetProgramState();
+        } catch (IOException ex) {
+            messageLabel.setText("An IO Error occurred, terminating.");
+        }
+    }
+
+    private void resetProgramState()
+    {
+        sourceFile = null;
+        targetDir = null;
+        targetMode = false;
+
+        sourceFileLabel.setText("");
+        targetPathLabel.setText("");
+        targetFileField.setText("");
+
+        targetFileField.setEnabled(false);
+        targetButton.setEnabled(false);
+        okButton.setEnabled(false);
+
+        copyLocked = false;
     }
 
     public void windowClosing(WindowEvent e)
     {
         this.removeWindowListener(this);
-        Button1.removeActionListener(this);
-        Button2.removeActionListener(this);
         this.dispose();
     }
     public void windowClosed(WindowEvent e)
@@ -93,19 +311,4 @@ class Window extends Frame implements ActionListener, WindowListener {
     {}
     public void windowDeiconified(WindowEvent e)
     {}
-
-    public void actionPerformed(ActionEvent e)
-    {
-        Object source = e.getSource();
-        if (source == Button1)
-        {
-            Information1.setText("It was Info 1");
-            Information2.setText("");
-        }
-        if (source == Button2)
-        {
-            Information2.setText("It was Info 2");
-            Information1.setText("");
-        }
-    }
 }
