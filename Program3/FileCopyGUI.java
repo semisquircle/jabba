@@ -29,7 +29,7 @@ public class FileCopyGUI
     }
 }
 
-class Window extends Frame implements ActionListener, WindowListener
+class Window extends Frame implements ActionListener, WindowListener,ItemListener
 {
     private List directoryList;
     private Label sourceLabelTitle;
@@ -65,7 +65,7 @@ class Window extends Frame implements ActionListener, WindowListener
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         directoryList = new List(15);
-        directoryList.addActionListener(this);
+        directoryList.addItemListener(this);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -114,6 +114,12 @@ class Window extends Frame implements ActionListener, WindowListener
         targetFileField = new TextField(20);
         targetFileField.setEnabled(false);
         targetFileField.addActionListener(this);
+        // Enable the OK button as the user types
+        targetFileField.addTextListener(new TextListener() {
+            public void textValueChanged(TextEvent e) {
+                checkEnableOk();
+            }
+        }); 
         gbc.gridx = 1;
         add(targetFileField, gbc);
 
@@ -203,13 +209,13 @@ class Window extends Frame implements ActionListener, WindowListener
                 curDir = selectedFile;
                 updateDirectoryList();
             } else {
-                if (!targetMode) {
+                if (targetDir != null) {
+                    targetFileField.setText(selectedFile.getName());
+                    checkEnableOk();
+                } else {
                     sourceFile = selectedFile;
                     sourceFileLabel.setText(sourceFile.getName());
                     targetButton.setEnabled(true);
-                } else {
-                    targetFileField.setText(selectedFile.getName());
-                    checkEnableOk();
                 }
             }
         }
@@ -238,6 +244,7 @@ class Window extends Frame implements ActionListener, WindowListener
 
     private void performCopy()
     {
+        copyLocked = true;//Immediately lock navigation when run
         if (sourceFile == null) {
             messageLabel.setText("Source file not specified.");
             return;
@@ -254,6 +261,11 @@ class Window extends Frame implements ActionListener, WindowListener
         }
 
         File targetFile = new File(targetDir, targetFileField.getText());
+
+        // Overwrite warning
+        if (targetFile.exists()) {
+            messageLabel.setText("Output file " + targetFile.getName() + " exists. It will be overwritten.");
+        }
 
         try {
             BufferedReader reader = new BufferedReader(new FileReader(sourceFile));
@@ -272,8 +284,13 @@ class Window extends Frame implements ActionListener, WindowListener
             messageLabel.setText("File Copied");
 
             resetProgramState();
+        } catch (FileNotFoundException ex) {
+            messageLabel.setText("Error Opening File " + sourceFile.getName());
+            copyLocked = false;
         } catch (IOException ex) {
+            // Catches any other IO failures during r/w
             messageLabel.setText("An IO Error occurred, terminating.");
+            copyLocked = false;
         }
     }
 
