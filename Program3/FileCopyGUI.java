@@ -10,7 +10,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-
+/*sets up main class and main method */
 public class FileCopyGUI
 {
     private static final long serialVersionUID = 1L;
@@ -28,7 +28,7 @@ public class FileCopyGUI
         new Window(startPath);
     }
 }
-
+/*stes up window class that extends frame and implements actionlistener, windowlistener, and itemlistener*/
 class Window extends Frame implements ActionListener, WindowListener,ItemListener
 {
     private List directoryList;
@@ -46,7 +46,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
     private File targetDir;
     private boolean targetMode;
     private boolean copyLocked;
-
+/*sets up the window and the components + listeners, and initializes directory list */
     public Window(String startPath)
     {
         File startDir = new File(startPath);
@@ -146,7 +146,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
         updateDirectoryList();
         setVisible(true);
     }
-
+/*updates directory list depending on current directory*/ 
     private void updateDirectoryList()
     {
         directoryList.removeAll();
@@ -186,7 +186,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
             }
         }
     }
-
+/*handles item selection*/
     public void itemStateChanged(ItemEvent e)
     {
         if (copyLocked) {
@@ -220,7 +220,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
             }
         }
     }
-
+/*handles buttons and text field actions*/
     public void actionPerformed(ActionEvent e)
     {
         messageLabel.setText("");
@@ -234,14 +234,14 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
             performCopy();
         }
     }
-
+/*enables ok if target file field isn't empty*/
     private void checkEnableOk()
     {
         if (targetFileField.getText().length() > 0) {
             okButton.setEnabled(true);
         }
     }
-
+/*file copy, with error handling and overwrtite warning*/
     private void performCopy()
     {
         copyLocked = true;//Immediately lock navigation when run
@@ -293,7 +293,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
             copyLocked = false;
         }
     }
-
+/*resets program state if copy is complete or error occurs*/
     private void resetProgramState()
     {
         sourceFile = null;
@@ -310,7 +310,7 @@ class Window extends Frame implements ActionListener, WindowListener,ItemListene
 
         copyLocked = false;
     }
-
+/*window events*/
     public void windowClosing(WindowEvent e)
     {
         this.removeWindowListener(this);
