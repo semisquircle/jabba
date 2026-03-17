@@ -39,7 +39,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
 
     private int WinTop = 10;
     private int WinLeft = 10;
-
+    private int WinBottom = HEIGHT - WinTop;
+    private int WinRight = WIDTH - WinLeft;
     private int BUTTONW = 50;
     private int CENTER;
     private int BUTTONS;
@@ -206,25 +207,27 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
                 Obj.x += dx;
                 Obj.y += dy;
 
-                if (Obj.x <= 1)
+                int half = (SObj - 1) / 2;
+
+                if (Obj.x - half<= 1)
                 {
-                    Obj.x = 1;
+                    Obj.x = half + 1;
                     dx = -dx;
                 }
-                else if (Obj.x >= ScreenWidth - SObj - 1)
+                else if (Obj.x + half >= ScreenWidth - 2)
                 {
-                    Obj.x = ScreenWidth - SObj - 1;
+                    Obj.x = ScreenWidth - half - 2;
                     dx = -dx;
                 }
 
-                if (Obj.y <= 1)
+                if (Obj.y - half <= 1)
                 {
-                    Obj.y = 1;
+                    Obj.y = half + 1;
                     dy = -dy;
                 }
-                else if (Obj.y >= ScreenHeight - SObj - 1)
+                else if (Obj.y + half >= ScreenHeight - 2)
                 {
-                    Obj.y = ScreenHeight - SObj - 1;
+                    Obj.y = ScreenHeight - half - 2;
                     dy = -dy;
                 }
 
@@ -545,6 +548,6 @@ class Objc extends Canvas
         }
 
         g.setColor(Color.red);
-        g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
+        g.drawRect(1, 1, ScreenWidth - 1, ScreenHeight - 1);
     }
 }
