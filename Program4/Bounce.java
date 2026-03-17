@@ -185,7 +185,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         start();
     }
 
-    // Thread methods
+    // Thread stuff
     private void start()
     {
         if (thethread == null)
@@ -209,7 +209,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
 
                 int half = (SObj - 1) / 2;
 
-                if (Obj.x - half<= 1)
+                // Prevent object from exceeding boundaries
+                if (Obj.x - half <= 1)
                 {
                     Obj.x = half + 1;
                     dx = -dx;
@@ -262,7 +263,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         Start.setLocation(CENTER - 2 * (BUTTONW + BUTTONS) - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
         Shape.setLocation(CENTER - BUTTONW - BUTTONS - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
         Tail.setLocation(CENTER - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
-        Clear.setLocation(CENTER + BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
+        Clear.setLocation(CENTER + BUTTONW / 2 + BUTTONS, ScreenHeight + BUTTONHS + i.top);
         Quit.setLocation(CENTER + BUTTONW + 2 * BUTTONS + BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
 
         Start.setSize(BUTTONW, BUTTONH);
@@ -307,6 +308,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         WinWidth = getWidth();
         WinHeight = getHeight();
 
+        // Prevent resizing too small
         if (WinWidth < minWidth)
         {
             WinWidth = minWidth;
@@ -407,6 +409,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         int TS;
         Scrollbar sb = (Scrollbar) e.getSource();
 
+        // Size/speed scrollbars
         if (sb == ObjSizeScrollBar)
         {
             TS = e.getValue();
