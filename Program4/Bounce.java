@@ -74,6 +74,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     private int dx = 2;
     private int dy = 2;
 
+    private boolean tailOn = false;
+
     public static void main(String[] args)
     {
         new Bounce();
@@ -177,6 +179,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
 
         // Thread
         isTimePaused = true;
+        isStarted = false;
         delay = 1000.0 / SpeedScrollBar.getValue();
         start();
     }
@@ -184,10 +187,9 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     // Thread methods
     private void start()
     {
-        isStarted = true;
         if (thethread == null)
         {
-            thethread = new Thread();
+            thethread = new Thread(this);
             thethread.start();
         }
     }
@@ -195,9 +197,41 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     @Override
     public void run()
     {
-        isStarted = true;
-        while (!isTimePaused)
+        while (true)
         {
+            if (!isTimePaused)
+            {
+                Obj.setPrevious(Obj.x, Obj.y);
+
+                Obj.x += dx;
+                Obj.y += dy;
+
+                if (Obj.x <= 1)
+                {
+                    Obj.x = 1;
+                    dx = -dx;
+                }
+                else if (Obj.x >= ScreenWidth - SObj - 1)
+                {
+                    Obj.x = ScreenWidth - SObj - 1;
+                    dx = -dx;
+                }
+
+                if (Obj.y <= 1)
+                {
+                    Obj.y = 1;
+                    dy = -dy;
+                }
+                else if (Obj.y >= ScreenHeight - SObj - 1)
+                {
+                    Obj.y = ScreenHeight - SObj - 1;
+                    dy = -dy;
+                }
+
+                Obj.setTail(tailOn);
+                Obj.repaint();
+            }
+
             try
             {
                 Thread.sleep((long) delay);
@@ -205,27 +239,19 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
+                return;
             }
-
-            Obj.x += dx;
-            Obj.y += dy;
-
-            // check for collisions with screen boundaries
-            if (Obj.x <= 0 || Obj.x >= ScreenWidth - SObj) {
-                dx = -dx;
-            }
-            if (Obj.y <= 0 || Obj.y >= ScreenHeight - SObj) {
-                dy = -dy;
-            }
-
-            Obj.repaint();
         }
     }
 
     private void stop()
     {
         isTimePaused = true;
-        thethread.interrupt();
+        if (thethread != null)
+        {
+            thethread.interrupt();
+            thethread = null;
+        }
     }
 
     private void sizeScreen()
@@ -272,13 +298,36 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
 
     public void componentResized(ComponentEvent e)
     {
+        int minWidth = i.left + i.right + 5 * BUTTONW + 4 * BUTTONS + 2 * ScrollBarW + 2 * BUTTONS;
+        int minHeight = i.top + i.bottom + 50 + 2 * (BUTTONH + BUTTONHS);
+
         WinWidth = getWidth();
         WinHeight = getHeight();
+
+        if (WinWidth < minWidth)
+        {
+            WinWidth = minWidth;
+            setSize(WinWidth, WinHeight);
+        }
+
+        if (WinHeight < minHeight)
+        {
+            WinHeight = minHeight;
+            setSize(WinWidth, WinHeight);
+        }
 
         makeSheet();
         sizeScreen();
 
-        Obj.reSize(ScreenWidth, ScreenHeight);
+        int maxSize = Math.min(ScreenWidth, ScreenHeight) - 2;
+        if (SObj > maxSize)
+        {
+            SObj = (maxSize / 2) * 2 + 1;
+            Obj.updateSize(SObj);
+            ObjSizeScrollBar.setValue(SObj);
+        }
+
+        Obj.reSize(ScreenWidth, ScreenHeight, SObj);
     }
 
     public void componentMoved(ComponentEvent e) {}
@@ -295,13 +344,15 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             {
                 Start.setLabel("Run");
                 isTimePaused = true;
+                isStarted = false;
                 stop();
             }
             else
             {
                 Start.setLabel("Pause");
                 isTimePaused = false;
-                run();
+                isStarted = true;
+                start();
             }
         }
 
@@ -327,10 +378,12 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             if (Tail.getLabel().equals("No Tail"))
             {
                 Tail.setLabel("Yes Tail");
+                tailOn = true;
             }
             else
             {
                 Tail.setLabel("No Tail");
+                tailOn = false;
             }
         }
 
@@ -355,7 +408,16 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         {
             TS = e.getValue();
             TS = (TS / 2) * 2 + 1;
-            Obj.updateSize(TS);
+
+            int maxSize = Math.min(ScreenWidth, ScreenHeight) - 2;
+            if (TS > maxSize)
+            {
+                TS = (maxSize / 2) * 2 + 1;
+                ObjSizeScrollBar.setValue(TS);
+            }
+
+            SObj = TS;
+            Obj.updateSize(SObj);
         }
         else
         {
@@ -375,9 +437,14 @@ class Objc extends Canvas
     private int SObj;
 
     public int x, y;
+    private int prevX, prevY;
+    private int prevSObj;
+    private boolean prevRect;
+    private boolean hasPrev = false;
 
     private boolean rect = true;
     private boolean clear = false;
+    private boolean tail = false;
 
     public Objc(int SB, int w, int h)
     {
@@ -398,17 +465,38 @@ class Objc extends Canvas
         SObj = NS;
     }
 
-    public void reSize(int w, int h)
+    public void setTail(boolean t)
+    {
+        tail = t;
+    }
+
+    public void setPrevious(int px, int py)
+    {
+        prevX = px;
+        prevY = py;
+        prevSObj = SObj;
+        prevRect = rect;
+        hasPrev = true;
+    }
+
+    public void reSize(int w, int h, int currentSObj)
     {
         ScreenWidth = w;
         ScreenHeight = h;
-        x = ScreenWidth / 2;
-        y = ScreenHeight / 2;
+        SObj = currentSObj;
+
+        x = Math.min(x, ScreenWidth - SObj - 1);
+        y = Math.min(y, ScreenHeight - SObj - 1);
+        x = Math.max(x, 1);
+        y = Math.max(y, 1);
+
+        hasPrev = false;
     }
 
     public void clear()
     {
         clear = true;
+        hasPrev = false;
     }
 
     public void paint(Graphics g)
@@ -428,13 +516,25 @@ class Objc extends Canvas
             g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
         }
 
+        if (!tail && hasPrev)
+        {
+            g.setColor(Color.white);
+            if (prevRect)
+            {
+                g.fillRect(prevX - (prevSObj - 1) / 2, prevY - (prevSObj - 1) / 2, prevSObj, prevSObj);
+            }
+            else
+            {
+                g.fillOval(prevX - (prevSObj - 1) / 2, prevY - (prevSObj - 1) / 2, prevSObj, prevSObj);
+            }
+        }
+
         if (rect)
         {
             g.setColor(Color.lightGray);
             g.fillRect(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj, SObj);
             g.setColor(Color.black);
             g.drawRect(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj - 1, SObj - 1);
-
         }
         else
         {
@@ -443,5 +543,8 @@ class Objc extends Canvas
             g.setColor(Color.black);
             g.drawOval(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj - 1, SObj - 1);
         }
+
+        g.setColor(Color.red);
+        g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
     }
 }
