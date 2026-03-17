@@ -236,6 +236,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
                 Obj.repaint();
             }
 
+            // Thread animation delay
             try
             {
                 Thread.sleep((long) delay);
@@ -343,6 +344,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     {
         Object source = e.getSource();
 
+        // Run/pause button
         if (source == Start)
         {
             if (Start.getLabel().equals("Pause"))
@@ -361,6 +363,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             }
         }
 
+        // Square/Circle button
         if (source == Shape)
         {
             if (Shape.getLabel().equals("Circle"))
@@ -378,6 +381,7 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             Obj.repaint();
         }
 
+        // Tail button
         if (source == Tail)
         {
             if (Tail.getLabel().equals("No Tail"))
@@ -392,12 +396,14 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
             }
         }
 
+        // Clear button
         if (source == Clear)
         {
             Obj.clear();
             Obj.repaint();
         }
 
+        // Quit button
         if (source == Quit)
         {
             System.exit(0);
@@ -505,6 +511,7 @@ class Objc extends Canvas
         hasPrev = false;
     }
 
+    // Drawing the canvas (overridden)
     public void paint(Graphics g)
     {
         g.setColor(Color.red);
@@ -512,6 +519,7 @@ class Objc extends Canvas
         update(g);
     }
 
+    // Drawing the object (overridden)
     public void update(Graphics g)
     {
         if (clear)
