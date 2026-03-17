@@ -1,9 +1,18 @@
+/*
+	Program name: Program 4, Bounce Program
+	Course: CMSC 3320, Technical Computing Using Java
+	Group: #3
+	Members:
+		Shawn Gallagher - GAL82896@pennwest.edu
+		Lucas Giovannelli - GIO07221@pennwest.edu
+		Joshua Watson - WAT93888@pennwest.edu
+*/
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 
-public class Bounce extends Frame implements WindowListener, ComponentListener, ActionListener, AdjustmentListener {
-
+public class Bounce extends Frame implements WindowListener, ComponentListener, ActionListener, AdjustmentListener, Runnable
+{
     private static final long serialVersionUID = 10L;
 
     // Window constants
@@ -56,27 +65,41 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     private Scrollbar SpeedScrollBar;
     private Scrollbar ObjSizeScrollBar;
 
-    public static void main(String[] args) {
+    // Thread variables
+    private double delay;
+    private Thread thethread;
+    private boolean isTimePaused;
+    private boolean isStarted;
+
+    private int dx = 2;
+    private int dy = 2;
+
+    public static void main(String[] args)
+    {
         new Bounce();
     }
 
-    public Bounce() {
+    public Bounce()
+    {
         setLayout(null);
         setVisible(true);
 
         makeSheet();
 
-        try {
+        try
+        {
             initComponents();
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
 
         sizeScreen();
     }
 
-    private void makeSheet() {
-
+    private void makeSheet()
+    {
         i = getInsets();
 
         ScreenWidth = WinWidth - i.left - i.right;
@@ -93,8 +116,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         setBackground(Color.lightGray);
     }
 
-    public void initComponents() throws Exception, IOException {
-
+    public void initComponents() throws Exception, IOException
+    {
         Start = new Button("Run");
         Shape = new Button("Circle");
         Clear = new Button("Clear");
@@ -151,10 +174,62 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
 
         setBounds(WinLeft, WinTop, WIDTH, HEIGHT);
         validate();
+
+        // Thread
+        isTimePaused = true;
+        delay = 1000.0 / SpeedScrollBar.getValue();
+        start();
     }
 
-    private void sizeScreen() {
+    // Thread methods
+    private void start()
+    {
+        isStarted = true;
+        if (thethread == null)
+        {
+            thethread = new Thread();
+            thethread.start();
+        }
+    }
 
+    @Override
+    public void run()
+    {
+        isStarted = true;
+        while (!isTimePaused)
+        {
+            try
+            {
+                Thread.sleep((long) delay);
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+
+            Obj.x += dx;
+            Obj.y += dy;
+
+            // check for collisions with screen boundaries
+            if (Obj.x <= 0 || Obj.x >= ScreenWidth - SObj) {
+                dx = -dx;
+            }
+            if (Obj.y <= 0 || Obj.y >= ScreenHeight - SObj) {
+                dy = -dy;
+            }
+
+            Obj.repaint();
+        }
+    }
+
+    private void stop()
+    {
+        isTimePaused = true;
+        thethread.interrupt();
+    }
+
+    private void sizeScreen()
+    {
         Start.setLocation(CENTER - 2 * (BUTTONW + BUTTONS) - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
         Shape.setLocation(CENTER - BUTTONW - BUTTONS - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
         Tail.setLocation(CENTER - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
@@ -182,7 +257,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
         Obj.setBounds(i.left, i.top, ScreenWidth, ScreenHeight);
     }
 
-    public void windowClosing(WindowEvent e) {
+    public void windowClosing(WindowEvent e)
+    {
         dispose();
         System.exit(0);
     }
@@ -194,8 +270,8 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     public void windowDeiconified(WindowEvent e) {}
     public void windowOpened(WindowEvent e) {}
 
-    public void componentResized(ComponentEvent e) {
-
+    public void componentResized(ComponentEvent e)
+    {
         WinWidth = getWidth();
         WinHeight = getHeight();
 
@@ -209,140 +285,161 @@ public class Bounce extends Frame implements WindowListener, ComponentListener, 
     public void componentShown(ComponentEvent e) {}
     public void componentHidden(ComponentEvent e) {}
 
-    public void actionPerformed(ActionEvent e) {
-
+    public void actionPerformed(ActionEvent e)
+    {
         Object source = e.getSource();
 
-        if (source == Start) {
-
-            if (Start.getLabel().equals("Pause")) {
+        if (source == Start)
+        {
+            if (Start.getLabel().equals("Pause"))
+            {
                 Start.setLabel("Run");
-            } else {
+                isTimePaused = true;
+                stop();
+            }
+            else
+            {
                 Start.setLabel("Pause");
+                isTimePaused = false;
+                run();
             }
         }
 
-        if (source == Shape) {
-
-            if (Shape.getLabel().equals("Circle")) {
+        if (source == Shape)
+        {
+            if (Shape.getLabel().equals("Circle"))
+            {
                 Shape.setLabel("Square");
                 Obj.rectangle(false);
-            } else {
+            }
+            else
+            {
                 Shape.setLabel("Circle");
                 Obj.rectangle(true);
             }
 
+            if (!isStarted) Obj.clear();
             Obj.repaint();
         }
 
-        if (source == Clear) {
+        if (source == Tail)
+        {
+            if (Tail.getLabel().equals("No Tail"))
+            {
+                Tail.setLabel("Yes Tail");
+            }
+            else
+            {
+                Tail.setLabel("No Tail");
+            }
+        }
+
+        if (source == Clear)
+        {
             Obj.clear();
             Obj.repaint();
         }
 
-        if (source == Quit) {
+        if (source == Quit)
+        {
             System.exit(0);
         }
     }
 
-    public void adjustmentValueChanged(AdjustmentEvent e) {
-
+    public void adjustmentValueChanged(AdjustmentEvent e)
+    {
         int TS;
         Scrollbar sb = (Scrollbar) e.getSource();
 
-        if (sb == ObjSizeScrollBar) {
-
+        if (sb == ObjSizeScrollBar)
+        {
             TS = e.getValue();
             TS = (TS / 2) * 2 + 1;
-
             Obj.updateSize(TS);
+        }
+        else
+        {
+            delay = 1000.0 / SpeedScrollBar.getValue();
         }
 
         Obj.repaint();
     }
-
 }
 
-/* ============================= */
-/* Canvas Object Class */
-/* ============================= */
-
-class Objc extends Canvas {
-
+class Objc extends Canvas
+{
     private static final long serialVersionUID = 11L;
 
     private int ScreenWidth;
     private int ScreenHeight;
     private int SObj;
 
-    private int x, y;
+    public int x, y;
 
     private boolean rect = true;
     private boolean clear = false;
 
-    public Objc(int SB, int w, int h) {
-
+    public Objc(int SB, int w, int h)
+    {
         ScreenWidth = w;
         ScreenHeight = h;
-
         SObj = SB;
-
         x = ScreenWidth / 2;
         y = ScreenHeight / 2;
     }
 
-    public void rectangle(boolean r) {
+    public void rectangle(boolean r)
+    {
         rect = r;
     }
 
-    public void updateSize(int NS) {
+    public void updateSize(int NS)
+    {
         SObj = NS;
     }
 
-    public void reSize(int w, int h) {
-
+    public void reSize(int w, int h)
+    {
         ScreenWidth = w;
         ScreenHeight = h;
-
         x = ScreenWidth / 2;
         y = ScreenHeight / 2;
     }
 
-    public void clear() {
+    public void clear()
+    {
         clear = true;
     }
 
-    public void paint(Graphics g) {
-
+    public void paint(Graphics g)
+    {
         g.setColor(Color.red);
         g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
-
         update(g);
     }
 
-    public void update(Graphics g) {
-
-        if (clear) {
+    public void update(Graphics g)
+    {
+        if (clear)
+        {
             super.paint(g);
             clear = false;
-
             g.setColor(Color.red);
             g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
         }
 
-        if (rect) {
-
+        if (rect)
+        {
             g.setColor(Color.lightGray);
             g.fillRect(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj, SObj);
-
             g.setColor(Color.black);
             g.drawRect(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj - 1, SObj - 1);
 
-        } else {
-
+        }
+        else
+        {
             g.setColor(Color.lightGray);
             g.fillOval(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj, SObj);
-
             g.setColor(Color.black);
             g.drawOval(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj - 1, SObj - 1);
         }
