@@ -76,7 +76,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     {
         new BouncingBall();
     }
-
+    // Constructor
     public BouncingBall()
     {
         makeSheet();
@@ -129,7 +129,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         Ball.addMouseListener(this);
         sheet.add("Center", Ball);
     }
-
+    // Component initialization
     public void initComponents() throws Exception, IOException
     {
         gbc.insets = new Insets(0, 20, 10, 20);
@@ -201,7 +201,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             thethread.start();
         }
     }
-
+    // Main loop for the thread
     @Override
     public void run()
     {
@@ -276,7 +276,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             }
         }
     }
-
+    // Stop the thread
     private void stop()
     {
         isTimePaused = true;
@@ -286,7 +286,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             thethread = null;
         }
     }
-
+    // Stop the window and exit the program
     private void stopWindow()
     {
         more = false;
@@ -328,7 +328,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             stopWindow();
         }
     }
-
+    // Adjustment listeners
     public void adjustmentValueChanged(AdjustmentEvent e)
     {
         int TS = e.getValue();
@@ -414,7 +414,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     {
         m1.setLocation(e.getPoint());
     }
-
+    // Mouse released listener
     public void mouseReleased(MouseEvent e)
     {
         Rectangle newRect = getDragBox(e);
@@ -422,7 +422,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         if (newRect.width <= 0 || newRect.height <= 0) return;
 
         if (!Perimeter.contains(newRect)) return;
-
+        // Ball cant intersect with new wall
         int half = SIZE / 2;
         Rectangle ballRect = new Rectangle(Ball.x - half, Ball.y - half, SIZE, SIZE);
         Rectangle expanded = new Rectangle(ballRect);
@@ -435,14 +435,12 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         {
             Rectangle existing = Ball.getOne(i);
 
-            
             if (existing.contains(newRect))
             {
                 addNew = false;
                 break;
             }
 
-            
             if (newRect.contains(existing))
             {
                 Ball.removeOne(i);
@@ -461,7 +459,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         Ball.setDragBox(new Rectangle(ZERO));
         Ball.repaint();
     }
-
+    // Mouse clicked listener
     public void mouseClicked(MouseEvent e)
     {
         Point p = new Point(e.getX(), e.getY());
@@ -480,11 +478,12 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         }
         Ball.repaint();
     }
-
+    // Mouse moved listener
     public void mouseMoved(MouseEvent e) {}
-
+    // Mouse dragged listener
     public void mouseDragged(MouseEvent e)
     {
+        // Update the drag box
         db.setBounds(getDragBox(e));
         if (Perimeter.contains(db))
         {
@@ -493,14 +492,14 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             m2.setLocation(e.getPoint());
         }
     }
-
+    // Mouse entered listener
     public void mouseEntered(MouseEvent e)
     {
         Ball.repaint();
     }
-
+    // Mouse exited listener
     public void mouseExited(MouseEvent e) {}
-
+    // Helper method to get the rectangle defined by the drag
     private Rectangle getDragBox(MouseEvent e)
     {
         int x1 = Math.min(m1.x, e.getX());
@@ -510,7 +509,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         return new Rectangle(x1, y1, x2 - x1, y2 - y1);
     }
 }
-
+// PanelMouse class for testing mouse events
 class PanelMouse extends Frame implements WindowListener, MouseListener, MouseMotionListener
 {
     final int WinLeft = 10;
@@ -518,7 +517,7 @@ class PanelMouse extends Frame implements WindowListener, MouseListener, MouseMo
     Point FrameSize = new Point(640, 400);
     Panel sheet = new Panel();
     List list = new List(13);
-
+    // Constructor
     PanelMouse()
     {
         setLayout(new BorderLayout());
@@ -534,7 +533,7 @@ class PanelMouse extends Frame implements WindowListener, MouseListener, MouseMo
         setVisible(true);
         validate();
     }
-
+    // Window listeners
     public void windowClosing(WindowEvent e) { dispose(); System.exit(0); }
     public void windowClosed(WindowEvent e) {}
     public void windowActivated(WindowEvent e) {}
@@ -558,7 +557,7 @@ class Ballc extends Canvas
 
     private int canvasWidth;
     private int canvasHeight;
-
+    // Ball properties
     private int size;
     private int prevSize;
     public int prevX, prevY;
@@ -570,13 +569,13 @@ class Ballc extends Canvas
     private Point dragEnd = null;
     private boolean isDragging = false;
     private Rectangle dragBox = null;
-
+    //Random position for ball
     public int randomPosition(int min, int max)
     {
         Random rand = new Random();
         return rand.nextInt((max - min) + 1) + min;
     }
-
+    // Constructor
     public Ballc(int SB, Point screen)
     {
         size = SB;
@@ -585,19 +584,19 @@ class Ballc extends Canvas
         x = randomPosition(size, canvasWidth - size);
         y = randomPosition(size, canvasHeight - size);
     }
-
+    // Update the size of the ball
     public void updateSize(int NS)
     {
         size = NS;
     }
-
+    // Set the previous position and size of the ball
     public void setPrevious(int px, int py)
     {
         prevX = px;
         prevY = py;
         prevSize = size;
     }
-
+    // Update the canvas width and height
     @Override
     public void setBounds(int x, int y, int w, int h)
     {
@@ -605,7 +604,7 @@ class Ballc extends Canvas
         canvasWidth = w;
         canvasHeight = h;
     }
-
+    // Update the canvas width and height based on the screen size
     public void reSize(Point screen)
     {
         canvasWidth = screen.x;
@@ -679,7 +678,7 @@ class Ballc extends Canvas
     {
         return walls.size();
     }
-
+    // Getters for canvas width and height
     public int getCanvasWidth()  { return canvasWidth; }
     public int getCanvasHeight() { return canvasHeight; }
 }
