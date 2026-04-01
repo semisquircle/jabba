@@ -11,70 +11,67 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.Random;
+import java.util.Vector;
 
-public class BouncingBall extends Frame implements WindowListener, ComponentListener, ActionListener, AdjustmentListener, Runnable
+public class BouncingBall extends Frame implements WindowListener, ComponentListener, ActionListener, AdjustmentListener, MouseListener, MouseMotionListener, Runnable
 {
-    private static final long serialVersionUID = 10L;
-
-    // Window constants
-    private final int WIDTH = 640;
-    private final int HEIGHT = 400;
+    // Frame
+    GridBagLayout gbl = new GridBagLayout();
+    GridBagConstraints gbc = new GridBagConstraints();
+    private final int WinLeft = 10;
+    private final int WinTop = 10;
+    private Point FrameSize = new Point(640, 400);
+    private Point Screen = new Point(FrameSize.x - 1, FrameSize.y - 1);
+    private Point m1 = new Point(0, 0);
+    private Point m2 = new Point(0, 0);
+    private Rectangle Perimeter = new Rectangle(0, 0, Screen.x, Screen.y);
+    private Rectangle db = new Rectangle();
+    private static final Rectangle ZERO = new Rectangle(0, 0, 0, 0);
+    private Panel sheet = new Panel();
+    private Panel control = new Panel();
+    private List list = new List(13);
     private final int BUTTONH = 20;
-    private final int BUTTONHS = 20;
 
-    // Scrollbar constants
-    private final int MAXObj = 100;
-    private final int MINObj = 10;
-    private final int SPEED = 50;
+    // Scrollbars
     private final int SBvisible = 10;
     private final int SBunit = 1;
     private final int SBblock = 10;
-    private final int SCROLLBARH = BUTTONH;
-    private final int SOBJ = 21;
+    private final int MINSpeed = 1;
+    private final int MAXSpeed = 100 + SBvisible;
+    private final int INITSpeed = 50;
+    private final int MAXSize = 100;
+    private final int MINSize = 10;
+    private final int INITSize = 21;
 
-    // Window variables
-    private int WinWidth = WIDTH;
-    private int WinHeight = HEIGHT;
-    private int ScreenWidth;
-    private int ScreenHeight;
+    // Ball
+    private Ballc Ball;
+    private int SPEED = INITSpeed;
+    private int SIZE = INITSize;
 
-    private int WinTop = 10;
-    private int WinLeft = 10;
-    private int minWidth = 300;
-    private int minHeight = 300;
-    private int CENTER;
-    private int BUTTONW;
-    private int BUTTONS;
+    // Compontents
+    private Button Run = new Button("Run");
+    private Button Pause = new Button("Pause");
+    private Button Quit = new Button("Quit");
+    private Scrollbar SpeedScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Scrollbar SizeScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Label SpeedLabel = new Label("Speed", Label.CENTER);
+    private Label SizeLabel = new Label("Size", Label.CENTER);
 
-    private Insets i;
-
-    // Buttons
-    private Button Run, Pause, Quit;
-
-    // Scrollbar variables
-    private int SObj = SOBJ;
-    private int SpeedSBmin = 1;
-    private int SpeedSBmax = 100 + SBvisible;
-    private int SpeedSBinit = SPEED;
-    private int ScrollBarW;
-
-    // Objects
-    private Objc Obj;
-
-    private Label SPEEDL = new Label("Speed", Label.CENTER);
-    private Label SIZEL = new Label("Size", Label.CENTER);
-
-    private Scrollbar SpeedScrollBar;
-    private Scrollbar ObjSizeScrollBar;
-
-    // Thread variables
-    private double delay;
+    // Thread
     private Thread thethread;
+    private double delay;
     private boolean isTimePaused;
     private boolean isStarted;
+    private boolean more = true;
 
     private int dx = 2;
     private int dy = 2;
+
+    // For resizing the window based on the ball's position
+    private Rectangle r = new Rectangle();
+    private int mr, mb;
+    private int sw, sh, lw, lh;
+    private final int EXPAND = 10;
 
     public static void main(String[] args)
     {
@@ -83,11 +80,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
 
     public BouncingBall()
     {
-        setLayout(null);
-        setVisible(true);
-
         makeSheet();
-
         try
         {
             initComponents();
@@ -97,87 +90,107 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             e.printStackTrace();
         }
 
-        sizeScreen();
-    }
-
-    private void makeSheet()
-    {
-        i = getInsets();
-
-        ScreenWidth = WinWidth - i.left - i.right;
-        ScreenHeight = WinHeight - i.top - i.bottom - 2 * (BUTTONH + BUTTONHS);
-
-        setSize(WinWidth, WinHeight);
-
-        CENTER = ScreenWidth / 2;
-        BUTTONS = ScreenWidth / 18;
-        ScrollBarW = ScreenWidth / 6;
-        BUTTONW = (ScreenWidth - (4 * BUTTONS) - (2 * ScrollBarW)) / 3;
-
-        setBackground(Color.lightGray);
-    }
-
-    public void initComponents() throws Exception, IOException
-    {
-        // Buttons
-        Run = new Button("Run");
-        Pause = new Button("Pause");
-        Quit = new Button("Quit");
-
-        add(Run);
-        add(Pause);
-        add(Quit);
-
-        Run.addActionListener(this);
-        Pause.addActionListener(this);
-        Quit.addActionListener(this);
-
-        Pause.setEnabled(false);
-
-        // Scrollbars
-        SpeedScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
-        ObjSizeScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
-
-        SpeedScrollBar.setMaximum(SpeedSBmax);
-        SpeedScrollBar.setMinimum(SpeedSBmin);
-        SpeedScrollBar.setUnitIncrement(SBunit);
-        SpeedScrollBar.setBlockIncrement(SBblock);
-        SpeedScrollBar.setValue(SpeedSBinit);
-        SpeedScrollBar.setVisibleAmount(SBvisible);
-        SpeedScrollBar.setBackground(Color.gray);
-
-        ObjSizeScrollBar.setMaximum(MAXObj);
-        ObjSizeScrollBar.setMinimum(MINObj);
-        ObjSizeScrollBar.setUnitIncrement(SBunit);
-        ObjSizeScrollBar.setBlockIncrement(SBblock);
-        ObjSizeScrollBar.setValue(SOBJ);
-        ObjSizeScrollBar.setVisibleAmount(SBvisible);
-        ObjSizeScrollBar.setBackground(Color.gray);
-
-        add(SpeedScrollBar);
-        add(ObjSizeScrollBar);
-        add(SPEEDL);
-        add(SIZEL);
-
-        SpeedScrollBar.addAdjustmentListener(this);
-        ObjSizeScrollBar.addAdjustmentListener(this);
-
-        Obj = new Objc(SObj, ScreenWidth, ScreenHeight);
-        Obj.setBackground(Color.white);
-
-        add(Obj);
-
-        addComponentListener(this);
-        addWindowListener(this);
-
-        setBounds(WinLeft, WinTop, WIDTH, HEIGHT);
         validate();
+        setVisible(true);
 
         // Thread
         isTimePaused = true;
         isStarted = false;
         delay = 1000.0 / SpeedScrollBar.getValue();
         start();
+    }
+
+    // Window initialization
+    private void makeSheet()
+    {
+        setLayout(new BorderLayout());
+        setBounds(WinLeft, WinTop, FrameSize.x, FrameSize.y);
+        setBackground(Color.lightGray);
+        addComponentListener(this);
+        addWindowListener(this);
+
+        m1.setLocation(0, 0);
+        m2.setLocation(0, 0);
+
+        Perimeter.setBounds(0, 0, Screen.x, Screen.y);
+        Perimeter.grow(-1, -1);
+
+        sheet.setLayout(new BorderLayout(0, 0));
+        sheet.setVisible(true);
+        add("Center", sheet);
+
+        control.setLayout(gbl);
+        control.setBackground(Color.lightGray);
+        control.setVisible(true);
+        add("South", control);
+
+        Ball = new Ballc(INITSize, Screen);
+        Ball.setBackground(Color.white);
+        Ball.addMouseMotionListener(this);
+        Ball.addMouseListener(this);
+        sheet.add("Center", Ball);
+    }
+
+    public void initComponents() throws Exception, IOException
+    {
+        gbc.insets = new Insets(0, 20, 10, 20);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
+        gbc.gridwidth = 1;
+
+        // Buttons
+        Run.addActionListener(this);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        control.add(Run, gbc);
+
+        Pause.addActionListener(this);
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        Pause.setEnabled(false);
+        control.add(Pause, gbc);
+
+        Quit.addActionListener(this);
+        gbc.gridx = 3;
+        gbc.gridy = 0;
+        control.add(Quit, gbc);
+
+        // Scrollbars
+        SpeedScrollBar.setMaximum(MAXSpeed);
+        SpeedScrollBar.setMinimum(MINSpeed);
+        SpeedScrollBar.setUnitIncrement(SBunit);
+        SpeedScrollBar.setBlockIncrement(SBblock);
+        SpeedScrollBar.setValue(INITSpeed);
+        SpeedScrollBar.setVisibleAmount(SBvisible);
+        SpeedScrollBar.setBackground(Color.gray);
+        SpeedScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        control.add(SpeedScrollBar, gbc);
+
+        SizeScrollBar.setMaximum(MAXSize);
+        SizeScrollBar.setMinimum(MINSize);
+        SizeScrollBar.setUnitIncrement(SBunit);
+        SizeScrollBar.setBlockIncrement(SBblock);
+        SizeScrollBar.setValue(INITSpeed);
+        SizeScrollBar.setVisibleAmount(SBvisible);
+        SizeScrollBar.setBackground(Color.gray);
+        SizeScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        control.add(SizeScrollBar, gbc);
+
+        // Labels
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        control.add(SpeedLabel, gbc);
+
+        gbc.gridx = 4;
+        gbc.gridy = 1;
+        control.add(SizeLabel, gbc);
+
+        control.validate();
     }
 
     // Thread stuff
@@ -193,52 +206,47 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     @Override
     public void run()
     {
-        while (true)
+        while (more)
         {
-            if (!isTimePaused)
-            {
-                Obj.setPrevious(Obj.x, Obj.y);
-
-                Obj.x += dx;
-                Obj.y += dy;
-
-                int half = (SObj - 1) / 2;
-
-                // Prevent object from exceeding boundaries
-                if (Obj.x - half <= 1)
-                {
-                    Obj.x = half + 1;
-                    dx = -dx;
-                }
-                else if (Obj.x + half >= ScreenWidth - 2)
-                {
-                    Obj.x = ScreenWidth - half - 2;
-                    dx = -dx;
-                }
-
-                if (Obj.y - half <= 1)
-                {
-                    Obj.y = half + 1;
-                    dy = -dy;
-                }
-                else if (Obj.y + half >= ScreenHeight - 2)
-                {
-                    Obj.y = ScreenHeight - half - 2;
-                    dy = -dy;
-                }
-
-                Obj.repaint();
-            }
-
-            // Thread animation delay
             try
             {
-                Thread.sleep((long) delay);
+                Thread.sleep(1);
             }
-            catch (InterruptedException e)
+            catch (InterruptedException e) {}
+
+            if (!isTimePaused)
             {
-                thethread.interrupt();
-                return;
+                Ball.setPrevious(Ball.x, Ball.y);
+
+                Ball.x += dx;
+                Ball.y += dy;
+
+                int half = (INITSize - 1) / 2;
+
+                // Prevent object from exceeding boundaries
+                if (Ball.x - half <= 1)
+                {
+                    Ball.x = half + 1;
+                    dx = -dx;
+                }
+                else if (Ball.x + half >= FrameSize.x - 2)
+                {
+                    Ball.x = FrameSize.x - half - 2;
+                    dx = -dx;
+                }
+
+                if (Ball.y - half <= 1)
+                {
+                    Ball.y = half + 1;
+                    dy = -dy;
+                }
+                else if (Ball.y + half >= FrameSize.y - 2)
+                {
+                    Ball.y = FrameSize.y - half - 2;
+                    dy = -dy;
+                }
+
+                Ball.repaint();
             }
         }
     }
@@ -253,78 +261,16 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         }
     }
 
-    private void sizeScreen()
+    private void stopWindow()
     {
-        Run.setLocation(CENTER - BUTTONW - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
-        Pause.setLocation(CENTER - BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
-        Quit.setLocation(CENTER + BUTTONW / 2, ScreenHeight + BUTTONHS + i.top);
-
-        Run.setSize(BUTTONW, BUTTONH);
-        Pause.setSize(BUTTONW, BUTTONH);
-        Quit.setSize(BUTTONW, BUTTONH);
-
-        SpeedScrollBar.setLocation(i.left + BUTTONS, ScreenHeight + BUTTONHS + i.top);
-        ObjSizeScrollBar.setLocation(WinWidth - ScrollBarW - i.right - BUTTONS, ScreenHeight + BUTTONHS + i.top);
-
-        SPEEDL.setLocation(i.left + BUTTONS, ScreenHeight + BUTTONHS + BUTTONH + i.top);
-        SIZEL.setLocation(WinWidth - ScrollBarW - BUTTONS - i.right, ScreenHeight + BUTTONHS + BUTTONH + i.top);
-
-        SpeedScrollBar.setSize(ScrollBarW, SCROLLBARH);
-        ObjSizeScrollBar.setSize(ScrollBarW, SCROLLBARH);
-
-        SPEEDL.setSize(ScrollBarW, BUTTONH);
-        SIZEL.setSize(ScrollBarW, BUTTONH);
-
-        Obj.setBounds(i.left, i.top, ScreenWidth, ScreenHeight);
-    }
-
-    public void windowClosing(WindowEvent e)
-    {
+        removeWindowListener(this);
+        Ball.removeMouseListener(this);
+        Ball.removeMouseMotionListener(this);
         dispose();
         System.exit(0);
     }
-    public void windowClosed(WindowEvent e) {}
-    public void windowActivated(WindowEvent e) {}
-    public void windowDeactivated(WindowEvent e) {}
-    public void windowIconified(WindowEvent e) {}
-    public void windowDeiconified(WindowEvent e) {}
-    public void windowOpened(WindowEvent e) {}
 
-    public void componentResized(ComponentEvent e)
-    {
-        WinWidth = getWidth();
-        WinHeight = getHeight();
-
-        // Prevent resizing too small
-        if (WinWidth < minWidth)
-        {
-            WinWidth = minWidth;
-            setSize(WinWidth, WinHeight);
-        }
-
-        if (WinHeight < minHeight)
-        {
-            WinHeight = minHeight;
-            setSize(WinWidth, WinHeight);
-        }
-
-        makeSheet();
-        sizeScreen();
-
-        int maxSize = Math.min(ScreenWidth, ScreenHeight) - 2;
-        if (SObj > maxSize)
-        {
-            SObj = (maxSize / 2) * 2 + 1;
-            Obj.updateSize(SObj);
-            ObjSizeScrollBar.setValue(SObj);
-        }
-
-        Obj.reSize(ScreenWidth, ScreenHeight, SObj);
-    }
-    public void componentMoved(ComponentEvent e) {}
-    public void componentShown(ComponentEvent e) {}
-    public void componentHidden(ComponentEvent e) {}
-
+    // Action listeners
     public void actionPerformed(ActionEvent e)
     {
         Object source = e.getSource();
@@ -352,51 +298,141 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         // Quit button
         if (source == Quit)
         {
-            System.exit(0);
+            stopWindow();
         }
     }
     public void adjustmentValueChanged(AdjustmentEvent e)
     {
-        int TS;
+        int TS = e.getValue();
         Scrollbar sb = (Scrollbar) e.getSource();
 
-        // Size/speed scrollbars
-        if (sb == ObjSizeScrollBar)
+        // Size scrollbar
+        if (sb == SizeScrollBar)
         {
-            TS = e.getValue();
             TS = (TS / 2) * 2 + 1;
-
-            int maxSize = Math.min(ScreenWidth, ScreenHeight) - 2;
+            int maxSize = Math.min(FrameSize.x, FrameSize.y) - 2;
             if (TS > maxSize)
             {
                 TS = (maxSize / 2) * 2 + 1;
-                ObjSizeScrollBar.setValue(TS);
+                SizeScrollBar.setValue(TS);
             }
-
-            Obj.setPrevious(Obj.x, Obj.y);
-            SObj = TS;
-            Obj.updateSize(SObj);
+            Ball.setPrevious(Ball.x, Ball.y);
+            SIZE = TS;
+            Ball.updateSize(SIZE);
         }
+
+        // Speed scrollbar
         else
         {
             delay = 1000.0 / SpeedScrollBar.getValue();
+            SPEED = TS;
         }
 
-        Obj.repaint();
+        Ball.repaint();
+    }
+
+    // Window listeners
+    public void windowClosing(WindowEvent e)
+    {
+        stopWindow();
+    }
+    public void windowClosed(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
+
+    // Component listeners
+    public void componentResized(ComponentEvent e)
+    {
+        // Calculate wall bounds
+        r.setBounds(Ball.getOne(0));
+        mr = r.x + r.width;
+        mb = r.y + r.height;
+        for (int i = 0; i < Ball.walls.size(); i++)
+        {
+            r.setBounds(Ball.getOne(i));
+            mr = Math.max((r.x + r.width), mr);
+            mb = Math.max((r.y + r.height), mb);
+        }
+
+        // Calculate ball bounds
+        r.setBounds(Ball.getBall());
+        mr = Math.max((r.x + r.width), mr);
+        mb = Math.max((r.y + r.height), mb);
+
+        // Resize and refresh frame
+        if (mr > sw || mb > sh)
+        {
+            setSize(Math.max((mr + EXPAND), sw) + lw, Math.max((mb + EXPAND), sh) + lh + 2 * BUTTONH);
+            setExtendedState(ICONIFIED);
+            setExtendedState(NORMAL);
+        }
+
+        Screen.setLocation(sheet.getWidth() - 1, sheet.getHeight() - 1);
+        Perimeter.setBounds(getX(), getY(), Screen.x, Screen.y);
+        Perimeter.grow(-1, -1);
+        Ball.reSize(Screen);
+        Ball.repaint();
+    }
+    public void componentMoved(ComponentEvent e) {}
+    public void componentShown(ComponentEvent e) {}
+    public void componentHidden(ComponentEvent e) {}
+
+    // Mouse listeners
+    public void mousePressed(MouseEvent e)
+    {
+        String button = "";
+        if (e.getButton() == MouseEvent.BUTTON1) button = "Left";
+        if (e.getButton() == MouseEvent.BUTTON2) button = "Center";
+        if (e.getButton() == MouseEvent.BUTTON3) button = "Right";
+        list.add(button + " mouse button " + e.getButton() + " pressed");
+    }
+    public void mouseReleased(MouseEvent e)
+    {
+        list.add("Mouse button " + e.getButton() + " released");
+    }
+    public void mouseClicked(MouseEvent e)
+    {
+        list.add("Mouse clicked " + e.getClickCount() + " clicks");
+    }
+    public void mouseMoved(MouseEvent e)
+    {
+        list.add("Mouse moved");
+    }
+    public void mouseDragged(MouseEvent e)
+    {
+        list.add("Mouse dragged");
+    }
+    public void mouseEntered(MouseEvent e)
+    {
+        list.add("Mouse entered");
+    }
+    public void mouseExited(MouseEvent e)
+    {
+        list.add("Mouse exited");
     }
 }
 
-class Objc extends Canvas
+class Ballc extends Canvas
 {
-    private static final long serialVersionUID = 11L;
+    Image buffer;
+    Graphics g;
 
-    private int ScreenWidth;
-    private int ScreenHeight;
-    private int SObj;
+    private int canvasWidth;
+    private int canvasHeight;
 
-    public int x, y;
+    private int size;
     private int prevX, prevY;
-    private int prevSObj;
+    private int prevSize;
+    public int x, y;
+
+    // Walls
+    public Vector<Rectangle> walls = new Vector<Rectangle>();
+    private Point dragStart = null;
+    private Point dragEnd = null;
+    private boolean isDragging = false;
 
     public int randomPosition(int min, int max)
     {
@@ -404,59 +440,81 @@ class Objc extends Canvas
         return rand.nextInt((max - min) + 1) + min;
     }
 
-    public Objc(int SB, int w, int h)
+    public Ballc(int SB, Point screen)
     {
-        ScreenWidth = w;
-        ScreenHeight = h;
-        SObj = SB;
-        x = randomPosition(SB, ScreenWidth - SB);
-        y = randomPosition(SB, ScreenWidth - SB);
+        size = SB;
+        canvasWidth = screen.x;
+        canvasHeight = screen.y;
+        x = randomPosition(size, canvasWidth - size);
+        y = randomPosition(size, canvasHeight - size);
     }
 
     public void updateSize(int NS)
     {
-        SObj = NS;
+        size = NS;
     }
 
     public void setPrevious(int px, int py)
     {
         prevX = px;
         prevY = py;
-        prevSObj = SObj;
+        prevSize = size;
     }
 
-    public void reSize(int w, int h, int currentSObj)
-    {
-        ScreenWidth = w;
-        ScreenHeight = h;
-        SObj = currentSObj;
+    @Override
+    public void setBounds(int x, int y, int w, int h) {
+        super.setBounds(x, y, w, h);
+        canvasWidth = w;
+        canvasHeight = h;
+    }
 
-        x = Math.min(x, ScreenWidth - SObj - 1);
-        y = Math.min(y, ScreenHeight - SObj - 1);
-        x = Math.max(x, 1);
-        y = Math.max(y, 1);
+    public void reSize(Point screen)
+    {
+        canvasWidth = screen.x;
+        canvasHeight = screen.y;
     }
 
     // Drawing the canvas (overridden)
-    public void paint(Graphics g)
-    {
-        g.setColor(Color.blue);
-        g.drawRect(0, 0, ScreenWidth - 1, ScreenHeight - 1);
-        update(g);
-    }
+    public void paint(Graphics cg) {
+        buffer = createImage(canvasWidth, canvasHeight);
+        if (g != null) g.dispose();
 
-    // Drawing the object (overridden)
-    public void update(Graphics g)
-    {
-        g.setColor(Color.white);
-        g.fillOval(prevX - (prevSObj - 1) / 2, prevY - (prevSObj - 1) / 2, prevSObj, prevSObj);
+        g = buffer.getGraphics();
 
         g.setColor(Color.red);
-        g.fillOval(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj, SObj);
+        g.fillOval(x - size / 2, y - size / 2, size, size);
         g.setColor(Color.black);
-        g.drawOval(x - (SObj - 1) / 2, y - (SObj - 1) / 2, SObj - 1, SObj - 1);
+        g.drawOval(x - size / 2, y - size / 2, size, size);
 
-        g.setColor(Color.blue);
-        g.drawRect(1, 1, ScreenWidth - 1, ScreenHeight - 1);
+        cg.drawImage(buffer, 0, 0, null);
+    }
+
+    public void update(Graphics g)
+    {
+        paint(g);
+    }
+
+    public Rectangle getBall()
+    {
+        Rectangle r = new Rectangle(x, y, size, size);
+        return r;
+    }
+
+    // Walls
+    public void addOne(Rectangle r)
+    {
+        walls.addElement(new Rectangle(r));
+    }
+    public void removeOne(int i)
+    {
+        walls.removeElementAt(i);
+    }
+    public Rectangle getOne(int i)
+    {
+        return walls.elementAt(i);
+    }
+    public int getWallSize()
+    {
+        return walls.size();
     }
 }
