@@ -70,7 +70,6 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     // For resizing the window based on the ball's position
     private Rectangle r = new Rectangle();
     private int mr, mb;
-    private int sw, sh, lw, lh;
     private final int EXPAND = 10;
 
     public static void main(String[] args)
@@ -173,7 +172,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         SizeScrollBar.setMinimum(MINSize);
         SizeScrollBar.setUnitIncrement(SBunit);
         SizeScrollBar.setBlockIncrement(SBblock);
-        SizeScrollBar.setValue(INITSpeed);
+        SizeScrollBar.setValue(INITSize);
         SizeScrollBar.setVisibleAmount(SBvisible);
         SizeScrollBar.setBackground(Color.gray);
         SizeScrollBar.addAdjustmentListener(this);
@@ -210,7 +209,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         {
             try
             {
-                Thread.sleep(1);
+                Thread.sleep((long)(1000.0 / SPEED));
             }
             catch (InterruptedException e) {}
 
@@ -221,29 +220,56 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
                 Ball.x += dx;
                 Ball.y += dy;
 
-                int half = (INITSize - 1) / 2;
+                int half = SIZE / 2;
 
                 // Prevent object from exceeding boundaries
-                if (Ball.x - half <= 1)
+                if (Ball.x - half <= 0)
                 {
                     Ball.x = half + 1;
                     dx = -dx;
                 }
-                else if (Ball.x + half >= FrameSize.x - 2)
+                else if (Ball.x + half >= Ball.getCanvasWidth())
                 {
-                    Ball.x = FrameSize.x - half - 2;
+                    Ball.x = Ball.getCanvasWidth() - half - 1;
                     dx = -dx;
                 }
 
-                if (Ball.y - half <= 1)
+                if (Ball.y - half <= 0)
                 {
                     Ball.y = half + 1;
                     dy = -dy;
                 }
-                else if (Ball.y + half >= FrameSize.y - 2)
+                else if (Ball.y + half >= Ball.getCanvasHeight())
                 {
-                    Ball.y = FrameSize.y - half - 2;
+                    Ball.y = Ball.getCanvasHeight() - half - 1;
                     dy = -dy;
+                }
+
+                Rectangle ballRect = new Rectangle(Ball.x - half, Ball.y - half, SIZE, SIZE);
+
+                for (int i = 0; i < Ball.getWallSize(); i++)
+                {
+                    Rectangle wall = Ball.getOne(i);
+
+                    if (ballRect.intersects(wall))
+                    {
+                        int prevLeft   = Ball.prevX - half;
+                        int prevRight  = Ball.prevX + half;
+                        int prevTop    = Ball.prevY - half;
+                        int prevBottom = Ball.prevY + half;
+
+                        boolean fromLeft   = prevRight  <= wall.x;
+                        boolean fromRight  = prevLeft   >= wall.x + wall.width;
+                        boolean fromTop    = prevBottom <= wall.y;
+                        boolean fromBottom = prevTop    >= wall.y + wall.height;
+
+                        if (fromLeft || fromRight)  dx = -dx;
+                        if (fromTop  || fromBottom) dy = -dy;
+
+                        Ball.x = Ball.prevX;
+                        Ball.y = Ball.prevY;
+                        break;
+                    }
                 }
 
                 Ball.repaint();
@@ -263,6 +289,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
 
     private void stopWindow()
     {
+        more = false;
         removeWindowListener(this);
         Ball.removeMouseListener(this);
         Ball.removeMouseMotionListener(this);
@@ -301,6 +328,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
             stopWindow();
         }
     }
+
     public void adjustmentValueChanged(AdjustmentEvent e)
     {
         int TS = e.getValue();
@@ -310,7 +338,7 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         if (sb == SizeScrollBar)
         {
             TS = (TS / 2) * 2 + 1;
-            int maxSize = Math.min(FrameSize.x, FrameSize.y) - 2;
+            int maxSize = Math.min(Ball.getCanvasWidth(), Ball.getCanvasHeight()) - 2;
             if (TS > maxSize)
             {
                 TS = (maxSize / 2) * 2 + 1;
@@ -347,14 +375,22 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     public void componentResized(ComponentEvent e)
     {
         // Calculate wall bounds
-        r.setBounds(Ball.getOne(0));
-        mr = r.x + r.width;
-        mb = r.y + r.height;
-        for (int i = 0; i < Ball.walls.size(); i++)
+        if (Ball.getWallSize() > 0)
         {
-            r.setBounds(Ball.getOne(i));
-            mr = Math.max((r.x + r.width), mr);
-            mb = Math.max((r.y + r.height), mb);
+            r.setBounds(Ball.getOne(0));
+            mr = r.x + r.width;
+            mb = r.y + r.height;
+            for (int i = 1; i < Ball.getWallSize(); i++)
+            {
+                r.setBounds(Ball.getOne(i));
+                mr = Math.max((r.x + r.width), mr);
+                mb = Math.max((r.y + r.height), mb);
+            }
+        }
+        else
+        {
+            mr = 0;
+            mb = 0;
         }
 
         // Calculate ball bounds
@@ -362,20 +398,13 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
         mr = Math.max((r.x + r.width), mr);
         mb = Math.max((r.y + r.height), mb);
 
-        // Resize and refresh frame
-        if (mr > sw || mb > sh)
-        {
-            setSize(Math.max((mr + EXPAND), sw) + lw, Math.max((mb + EXPAND), sh) + lh + 2 * BUTTONH);
-            setExtendedState(ICONIFIED);
-            setExtendedState(NORMAL);
-        }
-
         Screen.setLocation(sheet.getWidth() - 1, sheet.getHeight() - 1);
         Perimeter.setBounds(getX(), getY(), Screen.x, Screen.y);
         Perimeter.grow(-1, -1);
         Ball.reSize(Screen);
         Ball.repaint();
     }
+
     public void componentMoved(ComponentEvent e) {}
     public void componentShown(ComponentEvent e) {}
     public void componentHidden(ComponentEvent e) {}
@@ -383,36 +412,143 @@ public class BouncingBall extends Frame implements WindowListener, ComponentList
     // Mouse listeners
     public void mousePressed(MouseEvent e)
     {
-        String button = "";
-        if (e.getButton() == MouseEvent.BUTTON1) button = "Left";
-        if (e.getButton() == MouseEvent.BUTTON2) button = "Center";
-        if (e.getButton() == MouseEvent.BUTTON3) button = "Right";
-        list.add(button + " mouse button " + e.getButton() + " pressed");
+        m1.setLocation(e.getPoint());
     }
+
     public void mouseReleased(MouseEvent e)
     {
-        list.add("Mouse button " + e.getButton() + " released");
+        Rectangle newRect = getDragBox(e);
+
+        if (newRect.width <= 0 || newRect.height <= 0) return;
+
+        if (!Perimeter.contains(newRect)) return;
+
+        int half = SIZE / 2;
+        Rectangle ballRect = new Rectangle(Ball.x - half, Ball.y - half, SIZE, SIZE);
+        Rectangle expanded = new Rectangle(ballRect);
+        expanded.grow(1, 1);
+        if (expanded.intersects(newRect)) return;
+
+        boolean addNew = true;
+        int i = 0;
+        while (i < Ball.getWallSize())
+        {
+            Rectangle existing = Ball.getOne(i);
+
+            
+            if (existing.contains(newRect))
+            {
+                addNew = false;
+                break;
+            }
+
+            
+            if (newRect.contains(existing))
+            {
+                Ball.removeOne(i);
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        if (addNew)
+        {
+            Ball.addOne(newRect);
+        }
+
+        Ball.setDragBox(new Rectangle(ZERO));
+        Ball.repaint();
     }
+
     public void mouseClicked(MouseEvent e)
     {
-        list.add("Mouse clicked " + e.getClickCount() + " clicks");
+        Point p = new Point(e.getX(), e.getY());
+        int i = 0;
+        while (i < Ball.getWallSize())
+        {
+            Rectangle b = Ball.getOne(i);
+            if (b.contains(p))
+            {
+                Ball.removeOne(i);
+            }
+            else
+            {
+                i++;
+            }
+        }
+        Ball.repaint();
     }
-    public void mouseMoved(MouseEvent e)
-    {
-        list.add("Mouse moved");
-    }
+
+    public void mouseMoved(MouseEvent e) {}
+
     public void mouseDragged(MouseEvent e)
     {
-        list.add("Mouse dragged");
+        db.setBounds(getDragBox(e));
+        if (Perimeter.contains(db))
+        {
+            Ball.setDragBox(db);
+            Ball.repaint();
+            m2.setLocation(e.getPoint());
+        }
     }
+
     public void mouseEntered(MouseEvent e)
     {
-        list.add("Mouse entered");
+        Ball.repaint();
     }
-    public void mouseExited(MouseEvent e)
+
+    public void mouseExited(MouseEvent e) {}
+
+    private Rectangle getDragBox(MouseEvent e)
     {
-        list.add("Mouse exited");
+        int x1 = Math.min(m1.x, e.getX());
+        int y1 = Math.min(m1.y, e.getY());
+        int x2 = Math.max(m1.x, e.getX());
+        int y2 = Math.max(m1.y, e.getY());
+        return new Rectangle(x1, y1, x2 - x1, y2 - y1);
     }
+}
+
+class PanelMouse extends Frame implements WindowListener, MouseListener, MouseMotionListener
+{
+    final int WinLeft = 10;
+    final int WinTop = 10;
+    Point FrameSize = new Point(640, 400);
+    Panel sheet = new Panel();
+    List list = new List(13);
+
+    PanelMouse()
+    {
+        setLayout(new BorderLayout());
+        setBounds(WinLeft, WinTop, FrameSize.x, FrameSize.y);
+        setBackground(Color.lightGray);
+        sheet.setLayout(new BorderLayout(0, 0));
+        sheet.setVisible(true);
+        sheet.add("Center", list);
+        add("Center", sheet);
+        addWindowListener(this);
+        list.addMouseListener(this);
+        list.addMouseMotionListener(this);
+        setVisible(true);
+        validate();
+    }
+
+    public void windowClosing(WindowEvent e) { dispose(); System.exit(0); }
+    public void windowClosed(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
+    public void mousePressed(MouseEvent e) { list.add("Mouse pressed"); }
+    public void mouseReleased(MouseEvent e) { list.add("Mouse released"); }
+    public void mouseClicked(MouseEvent e) { list.add("Mouse clicked"); }
+    public void mouseEntered(MouseEvent e) { list.add("Mouse entered"); }
+    public void mouseExited(MouseEvent e) { list.add("Mouse exited"); }
+    public void mouseMoved(MouseEvent e) { list.add("Mouse moved"); }
+    public void mouseDragged(MouseEvent e) { list.add("Mouse dragged"); }
 }
 
 class Ballc extends Canvas
@@ -424,8 +560,8 @@ class Ballc extends Canvas
     private int canvasHeight;
 
     private int size;
-    private int prevX, prevY;
     private int prevSize;
+    public int prevX, prevY;
     public int x, y;
 
     // Walls
@@ -433,6 +569,7 @@ class Ballc extends Canvas
     private Point dragStart = null;
     private Point dragEnd = null;
     private boolean isDragging = false;
+    private Rectangle dragBox = null;
 
     public int randomPosition(int min, int max)
     {
@@ -462,7 +599,8 @@ class Ballc extends Canvas
     }
 
     @Override
-    public void setBounds(int x, int y, int w, int h) {
+    public void setBounds(int x, int y, int w, int h)
+    {
         super.setBounds(x, y, w, h);
         canvasWidth = w;
         canvasHeight = h;
@@ -474,12 +612,36 @@ class Ballc extends Canvas
         canvasHeight = screen.y;
     }
 
+    public void setDragBox(Rectangle r)
+    {
+        dragBox = new Rectangle(r);
+    }
+
     // Drawing the canvas (overridden)
-    public void paint(Graphics cg) {
+    public void paint(Graphics cg)
+    {
+        if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
         buffer = createImage(canvasWidth, canvasHeight);
         if (g != null) g.dispose();
-
         g = buffer.getGraphics();
+
+        g.setColor(Color.white);
+        g.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        //paint rectangles
+        g.setColor(Color.blue);
+        for (int i = 0; i < walls.size(); i++)
+        {
+            Rectangle temp = walls.elementAt(i);
+            g.fillRect(temp.x, temp.y, temp.width, temp.height);
+        }
+
+        if (dragBox != null && dragBox.width > 0 && dragBox.height > 0)
+        {
+            g.setColor(Color.darkGray);
+            g.drawRect(dragBox.x, dragBox.y, dragBox.width, dragBox.height);
+        }
 
         g.setColor(Color.red);
         g.fillOval(x - size / 2, y - size / 2, size, size);
@@ -496,7 +658,7 @@ class Ballc extends Canvas
 
     public Rectangle getBall()
     {
-        Rectangle r = new Rectangle(x, y, size, size);
+        Rectangle r = new Rectangle(x - size / 2, y - size / 2, size, size);
         return r;
     }
 
@@ -517,4 +679,7 @@ class Ballc extends Canvas
     {
         return walls.size();
     }
+
+    public int getCanvasWidth()  { return canvasWidth; }
+    public int getCanvasHeight() { return canvasHeight; }
 }
