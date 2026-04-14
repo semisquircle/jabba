@@ -1,11 +1,11 @@
 /*
-	Program name: Program 6, Canon vs Ball Program
-	Course: CMSC 3320, Technical Computing Using Java
-	Group: #3
-	Members:
-		Shawn Gallagher - GAL82896@pennwest.edu
-		Lucas Giovannelli - GIO07221@pennwest.edu
-		Joshua Watson - WAT93888@pennwest.edu
+    Program name: Program 6, Canon vs Ball Program
+    Course: CMSC 3320, Technical Computing Using Java
+    Group: #3
+    Members:
+        Shawn Gallagher - GAL82896@pennwest.edu
+        Lucas Giovannelli - GIO07221@pennwest.edu
+        Joshua Watson - WAT93888@pennwest.edu
 */
 import java.awt.*;
 import java.awt.event.*;
@@ -14,24 +14,24 @@ import java.util.Vector;
 
 public class CanonVSBall extends Frame implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener
 {
-	// Frame
-	private int sw = 650, sh = 480;
-	GridBagLayout gbl = new GridBagLayout();
+    // Frame
+    private int sw = 650, sh = 480;
+    GridBagLayout gbl = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();
-	private Frame Sheet = new Frame();
-	private Panel ControlPanel = new Panel();
+    private Frame Sheet = new Frame();
+    private Panel ControlPanel = new Panel();
 
-	// Menu
-	private MenuBar MMB;
-	private Menu ControlMenu, ParamMenu, EnvMenu;
-	private Menu SizeMenu, SpeedMenu;
-	private MenuItem RunItem, PauseItem, RestartItem, QuitItem;
-	private CheckboxMenuItem Size1Item, Size2Item, Size3Item, Size4Item, Size5Item;
-	private CheckboxMenuItem Speed1Item, Speed2Item, Speed3Item, Speed4Item, Speed5Item;
-	private CheckboxMenuItem MercuryItem, VenusItem, EarthItem, MarsItem, JupiterItem, SaturnItem, UranusItem, NeptuneItem, PlutoItem;
+    // Menu
+    private MenuBar MMB;
+    private Menu ControlMenu, ParamMenu, EnvMenu;
+    private Menu SizeMenu, SpeedMenu;
+    private MenuItem RunItem, PauseItem, RestartItem, QuitItem;
+    private CheckboxMenuItem Size1Item, Size2Item, Size3Item, Size4Item, Size5Item;
+    private CheckboxMenuItem Speed1Item, Speed2Item, Speed3Item, Speed4Item, Speed5Item;
+    private CheckboxMenuItem MercuryItem, VenusItem, EarthItem, MarsItem, JupiterItem, SaturnItem, UranusItem, NeptuneItem, PlutoItem;
 
-	// Scrollbars
-	private final int SBVisible = 10;
+    // Scrollbars
+    private final int SBVisible = 10;
     private final int SBUnit = 1;
     private final int SBBlock = 10;
     private final int MINVelocity = 100;
@@ -45,43 +45,42 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
     private Label VelocityLabel = new Label("Initial Velocity", Label.CENTER);
     private Label AngleLabel = new Label("Angle", Label.CENTER);
 
-	// Labels
+    // Labels
     private Label TimeLabel = new Label("Time:", Label.CENTER);
     private Label BallLabel = new Label("Ball:", Label.CENTER);
     private Label PlayerLabel = new Label("Player:", Label.CENTER);
 
-	// Canvas
+    // Canvas
     private Ballc Ball;
     private int Velocity = INITVelocity;
     private int Angle = INITAngle;
 
-	public static void main(String[] args)
-	{
-		new CanonVSBall();
-	}
+    public static void main(String[] args)
+    {
+        new CanonVSBall();
+    }
 
-	public CanonVSBall()
-	{
-		Sheet.setLayout(new BorderLayout(0, 0));
-		Sheet.setBackground(Color.lightGray);
-		Sheet.setForeground(Color.black);
-        addWindowListener(this);
+    public CanonVSBall()
+    {
+        Sheet.setLayout(new BorderLayout(0, 0));
+        Sheet.setBackground(Color.lightGray);
+        Sheet.setForeground(Color.black);
 
-		menu();
+        menu();
 
-		Sheet.setMenuBar(MMB);
-		Sheet.addWindowListener(this);
-		Sheet.setSize(sw, sh);
-		Sheet.setResizable(true);
-		Sheet.setVisible(true);
-		Sheet.validate();
+        Sheet.setMenuBar(MMB);
+        Sheet.addWindowListener(this);
+        Sheet.setSize(sw, sh);
+        Sheet.setResizable(true);
+        Sheet.setVisible(true);
+        Sheet.validate();
 
-        Ball = new Ballc(INITVelocity, INITAngle);
+        Ball = new Ballc(sw, sh, INITVelocity, INITAngle);
         Ball.setBackground(Color.white);
         Ball.addMouseListener(this);
         Sheet.add("Center", Ball);
 
-		ControlPanel.setLayout(gbl);
+        ControlPanel.setLayout(gbl);
         ControlPanel.setBackground(Color.lightGray);
         ControlPanel.setVisible(true);
         add("South", ControlPanel);
@@ -94,72 +93,76 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
         {
             e.printStackTrace();
         }
-	}
 
-	public void menu()
-	{
-		MMB = new MenuBar();
+        addWindowListener(this);
+        validate();
+        setVisible(true);
+    }
 
-		ControlMenu = new Menu("Control");
-		RunItem = ControlMenu.add(new MenuItem("Run", new MenuShortcut(KeyEvent.VK_R)));
-		PauseItem = ControlMenu.add(new MenuItem("Pause", new MenuShortcut(KeyEvent.VK_P)));
-		RestartItem = ControlMenu.add(new MenuItem("Restart"));
-		QuitItem = ControlMenu.add(new MenuItem("Quit"));
-		MMB.add(ControlMenu);
+    public void menu()
+    {
+        MMB = new MenuBar();
 
-		ParamMenu = new Menu("Parameters");
-		ParamMenu.add(SizeMenu = new Menu("Size"));
-		SizeMenu.add(Size1Item = new CheckboxMenuItem("10"));
-		SizeMenu.add(Size2Item = new CheckboxMenuItem("20"));
-		SizeMenu.add(Size3Item = new CheckboxMenuItem("30"));
-		SizeMenu.add(Size4Item = new CheckboxMenuItem("40"));
-		SizeMenu.add(Size5Item = new CheckboxMenuItem("50"));
-		Size1Item.setState(true);
-		ParamMenu.add(SpeedMenu = new Menu("Speed"));
-		SpeedMenu.add(Speed1Item = new CheckboxMenuItem("10"));
-		SpeedMenu.add(Speed2Item = new CheckboxMenuItem("20"));
-		SpeedMenu.add(Speed3Item = new CheckboxMenuItem("30"));
-		SpeedMenu.add(Speed4Item = new CheckboxMenuItem("40"));
-		SpeedMenu.add(Speed5Item = new CheckboxMenuItem("50"));
-		Speed1Item.setState(true);
-		MMB.add(ParamMenu);
+        ControlMenu = new Menu("Control");
+        RunItem = ControlMenu.add(new MenuItem("Run", new MenuShortcut(KeyEvent.VK_R)));
+        PauseItem = ControlMenu.add(new MenuItem("Pause", new MenuShortcut(KeyEvent.VK_P)));
+        RestartItem = ControlMenu.add(new MenuItem("Restart"));
+        QuitItem = ControlMenu.add(new MenuItem("Quit"));
+        MMB.add(ControlMenu);
 
-		EnvMenu = new Menu("Environment");
-		EnvMenu.add(MercuryItem = new CheckboxMenuItem("Mercury"));
-		EnvMenu.add(VenusItem = new CheckboxMenuItem("Venus"));
-		EnvMenu.add(EarthItem = new CheckboxMenuItem("Earth"));
-		EnvMenu.add(MarsItem = new CheckboxMenuItem("Mars"));
-		EnvMenu.add(JupiterItem = new CheckboxMenuItem("Jupiter"));
-		EnvMenu.add(SaturnItem = new CheckboxMenuItem("Saturn"));
-		EnvMenu.add(UranusItem = new CheckboxMenuItem("Uranus"));
-		EnvMenu.add(NeptuneItem = new CheckboxMenuItem("Neptune"));
-		EnvMenu.add(PlutoItem = new CheckboxMenuItem("Pluto"));
-		MMB.add(EnvMenu);
+        ParamMenu = new Menu("Parameters");
+        ParamMenu.add(SizeMenu = new Menu("Size"));
+        SizeMenu.add(Size1Item = new CheckboxMenuItem("10"));
+        SizeMenu.add(Size2Item = new CheckboxMenuItem("20"));
+        SizeMenu.add(Size3Item = new CheckboxMenuItem("30"));
+        SizeMenu.add(Size4Item = new CheckboxMenuItem("40"));
+        SizeMenu.add(Size5Item = new CheckboxMenuItem("50"));
+        Size1Item.setState(true);
+        ParamMenu.add(SpeedMenu = new Menu("Speed"));
+        SpeedMenu.add(Speed1Item = new CheckboxMenuItem("10"));
+        SpeedMenu.add(Speed2Item = new CheckboxMenuItem("20"));
+        SpeedMenu.add(Speed3Item = new CheckboxMenuItem("30"));
+        SpeedMenu.add(Speed4Item = new CheckboxMenuItem("40"));
+        SpeedMenu.add(Speed5Item = new CheckboxMenuItem("50"));
+        Speed1Item.setState(true);
+        MMB.add(ParamMenu);
 
-		RunItem.addActionListener(this);
-		PauseItem.addActionListener(this);
-		RestartItem.addActionListener(this);
-		QuitItem.addActionListener(this);
-		Size1Item.addItemListener(this);
-		Size2Item.addItemListener(this);
-		Size3Item.addItemListener(this);
-		Size4Item.addItemListener(this);
-		Size5Item.addItemListener(this);
-		Speed1Item.addItemListener(this);
-		Speed2Item.addItemListener(this);
-		Speed3Item.addItemListener(this);
-		Speed4Item.addItemListener(this);
-		Speed5Item.addItemListener(this);
-		MercuryItem.addItemListener(this);
-		VenusItem.addItemListener(this);
-		EarthItem.addItemListener(this);
-		MarsItem.addItemListener(this);
-		SaturnItem.addItemListener(this);
-		SaturnItem.addItemListener(this);
-		UranusItem.addItemListener(this);
-		NeptuneItem.addItemListener(this);
-		PlutoItem.addItemListener(this);
-	}
+        EnvMenu = new Menu("Environment");
+        EnvMenu.add(MercuryItem = new CheckboxMenuItem("Mercury"));
+        EnvMenu.add(VenusItem = new CheckboxMenuItem("Venus"));
+        EnvMenu.add(EarthItem = new CheckboxMenuItem("Earth"));
+        EnvMenu.add(MarsItem = new CheckboxMenuItem("Mars"));
+        EnvMenu.add(JupiterItem = new CheckboxMenuItem("Jupiter"));
+        EnvMenu.add(SaturnItem = new CheckboxMenuItem("Saturn"));
+        EnvMenu.add(UranusItem = new CheckboxMenuItem("Uranus"));
+        EnvMenu.add(NeptuneItem = new CheckboxMenuItem("Neptune"));
+        EnvMenu.add(PlutoItem = new CheckboxMenuItem("Pluto"));
+        MMB.add(EnvMenu);
+
+        RunItem.addActionListener(this);
+        PauseItem.addActionListener(this);
+        RestartItem.addActionListener(this);
+        QuitItem.addActionListener(this);
+        Size1Item.addItemListener(this);
+        Size2Item.addItemListener(this);
+        Size3Item.addItemListener(this);
+        Size4Item.addItemListener(this);
+        Size5Item.addItemListener(this);
+        Speed1Item.addItemListener(this);
+        Speed2Item.addItemListener(this);
+        Speed3Item.addItemListener(this);
+        Speed4Item.addItemListener(this);
+        Speed5Item.addItemListener(this);
+        MercuryItem.addItemListener(this);
+        VenusItem.addItemListener(this);
+        EarthItem.addItemListener(this);
+        MarsItem.addItemListener(this);
+        SaturnItem.addItemListener(this);
+        SaturnItem.addItemListener(this);
+        UranusItem.addItemListener(this);
+        NeptuneItem.addItemListener(this);
+        PlutoItem.addItemListener(this);
+    }
 
     public void initControls() throws Exception, IOException
     {
@@ -206,123 +209,123 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
         ControlPanel.validate();
     }
 
-	public void stop()
-	{
-		RunItem.removeActionListener(this);
-		PauseItem.removeActionListener(this);
-		RestartItem.removeActionListener(this);
-		QuitItem.removeActionListener(this);
-		Size1Item.removeItemListener(this);
-		Size2Item.removeItemListener(this);
-		Size3Item.removeItemListener(this);
-		Size4Item.removeItemListener(this);
-		Size5Item.removeItemListener(this);
-		Speed1Item.removeItemListener(this);
-		Speed2Item.removeItemListener(this);
-		Speed3Item.removeItemListener(this);
-		Speed4Item.removeItemListener(this);
-		Speed5Item.removeItemListener(this);
-		MercuryItem.removeItemListener(this);
-		VenusItem.removeItemListener(this);
-		EarthItem.removeItemListener(this);
-		MarsItem.removeItemListener(this);
-		SaturnItem.removeItemListener(this);
-		SaturnItem.removeItemListener(this);
-		UranusItem.removeItemListener(this);
-		NeptuneItem.removeItemListener(this);
-		PlutoItem.removeItemListener(this);
-		Sheet.removeWindowListener(this);
-		Sheet.dispose();
-	}
+    public void stop()
+    {
+        RunItem.removeActionListener(this);
+        PauseItem.removeActionListener(this);
+        RestartItem.removeActionListener(this);
+        QuitItem.removeActionListener(this);
+        Size1Item.removeItemListener(this);
+        Size2Item.removeItemListener(this);
+        Size3Item.removeItemListener(this);
+        Size4Item.removeItemListener(this);
+        Size5Item.removeItemListener(this);
+        Speed1Item.removeItemListener(this);
+        Speed2Item.removeItemListener(this);
+        Speed3Item.removeItemListener(this);
+        Speed4Item.removeItemListener(this);
+        Speed5Item.removeItemListener(this);
+        MercuryItem.removeItemListener(this);
+        VenusItem.removeItemListener(this);
+        EarthItem.removeItemListener(this);
+        MarsItem.removeItemListener(this);
+        SaturnItem.removeItemListener(this);
+        SaturnItem.removeItemListener(this);
+        UranusItem.removeItemListener(this);
+        NeptuneItem.removeItemListener(this);
+        PlutoItem.removeItemListener(this);
+        Sheet.removeWindowListener(this);
+        Sheet.dispose();
+    }
 
-	public void actionPerformed(ActionEvent e)
-	{
-		Object source = e.getSource();
-		if (source == RunItem) {}
-		if (source == PauseItem) {}
-		if (source == RestartItem) {}
-		if (source == QuitItem) stop();
-	}
+    public void actionPerformed(ActionEvent e)
+    {
+        Object source = e.getSource();
+        if (source == RunItem) {}
+        if (source == PauseItem) {}
+        if (source == RestartItem) {}
+        if (source == QuitItem) stop();
+    }
 
-	public void itemStateChanged(ItemEvent e)
-	{
-		CheckboxMenuItem source = (CheckboxMenuItem) e.getSource();
-		if (
-			source == Size1Item || source == Size2Item || source == Size3Item || source == Size4Item || source == Size5Item)
-		{
-			Size1Item.setState(false);
-			Size2Item.setState(false);
-			Size3Item.setState(false);
-			Size4Item.setState(false);
-			Size5Item.setState(false);
-			source.setState(true);
-		}
-		if (source == Speed1Item || source == Speed2Item || source == Speed3Item || source == Speed4Item || source == Speed5Item)
-		{
-			Speed1Item.setState(false);
-			Speed2Item.setState(false);
-			Speed3Item.setState(false);
-			Speed4Item.setState(false);
-			Speed5Item.setState(false);
-			source.setState(true);
-		}
-		if (source == MercuryItem || source == VenusItem || source == EarthItem || source == MarsItem || source == JupiterItem || source == SaturnItem || source == UranusItem || source == NeptuneItem || source == PlutoItem)
-		{
-			MercuryItem.setState(false);
-			VenusItem.setState(false);
-			EarthItem.setState(false);
-			MarsItem.setState(false);
-			JupiterItem.setState(false);
-			SaturnItem.setState(false);
-			UranusItem.setState(false);
-			NeptuneItem.setState(false);
-			PlutoItem.setState(false);
-			source.setState(true);
-		}
-	}
+    public void itemStateChanged(ItemEvent e)
+    {
+        CheckboxMenuItem source = (CheckboxMenuItem) e.getSource();
+        if (
+            source == Size1Item || source == Size2Item || source == Size3Item || source == Size4Item || source == Size5Item)
+        {
+            Size1Item.setState(false);
+            Size2Item.setState(false);
+            Size3Item.setState(false);
+            Size4Item.setState(false);
+            Size5Item.setState(false);
+            source.setState(true);
+        }
+        if (source == Speed1Item || source == Speed2Item || source == Speed3Item || source == Speed4Item || source == Speed5Item)
+        {
+            Speed1Item.setState(false);
+            Speed2Item.setState(false);
+            Speed3Item.setState(false);
+            Speed4Item.setState(false);
+            Speed5Item.setState(false);
+            source.setState(true);
+        }
+        if (source == MercuryItem || source == VenusItem || source == EarthItem || source == MarsItem || source == JupiterItem || source == SaturnItem || source == UranusItem || source == NeptuneItem || source == PlutoItem)
+        {
+            MercuryItem.setState(false);
+            VenusItem.setState(false);
+            EarthItem.setState(false);
+            MarsItem.setState(false);
+            JupiterItem.setState(false);
+            SaturnItem.setState(false);
+            UranusItem.setState(false);
+            NeptuneItem.setState(false);
+            PlutoItem.setState(false);
+            source.setState(true);
+        }
+    }
 
-	public void adjustmentValueChanged(AdjustmentEvent e)
+    public void adjustmentValueChanged(AdjustmentEvent e)
     {
         Scrollbar source = (Scrollbar) e.getSource();
-		int value = e.getValue();
+        int value = e.getValue();
 
         if (source == VelocityScrollBar)
         {
-			Velocity = value;
+            Velocity = value;
         }
         if (source == AngleScrollBar)
         {
-			Angle = value;
+            Angle = value;
         }
 
         Ball.repaint();
     }
 
-	// Window listeners
-	public void windowClosing(WindowEvent e) {
-		stop();
-	}
-	public void windowClosed(WindowEvent e) {}
-	public void windowOpened(WindowEvent e) {}
-	public void windowActivated(WindowEvent e) {}
-	public void windowDeactivated(WindowEvent e) {}
-	public void windowIconified(WindowEvent e) {}
-	public void windowDeiconified(WindowEvent e) {}
+    // Window listeners
+    public void windowClosing(WindowEvent e) {
+        stop();
+    }
+    public void windowClosed(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
 
-	// Component listeners
+    // Component listeners
     public void componentResized(ComponentEvent e) {}
     public void componentMoved(ComponentEvent e) {}
     public void componentShown(ComponentEvent e) {}
     public void componentHidden(ComponentEvent e) {}
 
-	// Mouse listeners
-	public void mousePressed(MouseEvent e) {}
-	public void mouseReleased(MouseEvent e) {}
-	public void mouseClicked(MouseEvent e) {}
-	public void mouseMoved(MouseEvent e) {}
-	public void mouseDragged(MouseEvent e) {}
-	public void mouseEntered(MouseEvent e) {}
-	public void mouseExited(MouseEvent e) {}
+    // Mouse listeners
+    public void mousePressed(MouseEvent e) {}
+    public void mouseReleased(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {}
+    public void mouseMoved(MouseEvent e) {}
+    public void mouseDragged(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {}
 }
 
 class Ballc extends Canvas
@@ -333,14 +336,16 @@ class Ballc extends Canvas
     private int canvasWidth;
     private int canvasHeight;
 
-	Polygon poly;
-	private float a1, a2, c2, c1;
+    Polygon poly;
+    private float a1, a2, c2, c1;
 
     public Vector<Rectangle> walls = new Vector<Rectangle>();
     private Rectangle dragBox = null;
 
-    public Ballc(int v, int a)
+    public Ballc(int w, int h, int v, int a)
     {
+        canvasWidth = w;
+        canvasHeight = h;
     }
 
     @Override
@@ -351,10 +356,10 @@ class Ballc extends Canvas
         canvasHeight = h;
     }
 
-    public void reSize(Point screen)
+    public void reSize(int w, int h)
     {
-        canvasWidth = screen.x;
-        canvasHeight = screen.y;
+        canvasWidth = w;
+        canvasHeight = h;
     }
 
     public void setDragBox(Rectangle r)
@@ -392,13 +397,15 @@ class Ballc extends Canvas
         cg.drawImage(buffer, 0, 0, null);
     }
 
-	public void drawPolygon(Polygon p)
-	{
-	}
+    public void drawPolygon(Polygon p)
+    {
+        // ???
+    }
 
-	public void fillPolygon(Polygon p)
-	{
-	}
+    public void fillPolygon(Polygon p)
+    {
+        // ???
+    }
 
     public void addOne(Rectangle r)
     {
