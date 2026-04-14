@@ -256,7 +256,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
                     Ball.repaint();
 
                     try { Thread.sleep(16); }
-                    catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+                    catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                 }
             });
             animThread.setDaemon(true);
@@ -651,7 +651,6 @@ class Ballc extends Canvas
     public void addOne(Rectangle r) { walls.addElement(new Rectangle(r)); }
     public void removeOne(int i) { walls.removeElementAt(i); }
     public Rectangle getOne(int i) { return walls.elementAt(i); }
-    public int getWallSize() { return walls.size(); }
 
     // Calculates initial velocity components from angle and spawns projectile at barrel tip
     public void fireProjectile()
@@ -705,7 +704,8 @@ class Ballc extends Canvas
         cg.drawImage(buffer, 0, 0, null);
     }
     
-    // Called once per frame: moves the target ball, applies gravity to projectile, checks all collisions
+    // Moves the target ball, applies gravity to projectile, checks all collisions
+    // (couldn't get this to work with the override, just leave as is for now)
     public void update()
     {
         if (ballAlive)
@@ -756,7 +756,7 @@ class Ballc extends Canvas
 
         if (projActive)
         {
-            // Gravity accumulates downward each frame; 0.016 = seconds per frame, 0.3 = pixel scale
+            // 0.016 = seconds per frame, 0.3 = pixel scale
             projVY += projGravity * 0.016 * 0.3;
             projX += projVX;
             projY += projVY;
