@@ -12,7 +12,7 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.util.Vector;
 
-public class CannonVSBall extends Frame implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener
+public class CannonVSBall implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener, MouseMotionListener
 {
     // Frame/layout
     private int sw = 650, sh = 480;
@@ -79,6 +79,7 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         Ball = new Ballc(sw, sh, initSize, initSpeed, initAngle, initVelocity, initGravity);
         Ball.setBackground(Color.white);
         Ball.addMouseListener(this);
+        Ball.addMouseMotionListener(this);
         sheet.add("Center", Ball);
 
         controlPanel.setLayout(gbl);
@@ -228,37 +229,39 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     // Starts the game loop on a background thread
     public void startAnimation()
     {
-        running = true;
-        animThread = new Thread(() ->
-        {
-            while (running)
+        if (!running) {
+            running = true;
+            animThread = new Thread(() ->
             {
-                Ball.update();
-                elapsedTime += 0.016;
-                timeLabel.setText(String.format("Time: %.1fs", elapsedTime));
-
-                if (Ball.playerScored())
+                while (running)
                 {
-                    playerScore++;
-                    playerLabel.setText("Player: " + playerScore);
-                    Ball.resetProjectile();
-                }
-                if (Ball.ballScored())
-                {
-                    ballScore++;
-                    ballLabel.setText("Ball: " + ballScore);
-                    Ball.clearBallScored();
-                }
+                    Ball.update();
+                    elapsedTime += 0.016;
+                    timeLabel.setText(String.format("Time: %.1fs", elapsedTime));
 
-                statusLabel.setText(Ball.getStatusMessage());
-                Ball.repaint();
+                    if (Ball.playerScored())
+                    {
+                        playerScore++;
+                        playerLabel.setText("Player: " + playerScore);
+                        Ball.resetProjectile();
+                    }
+                    if (Ball.ballScored())
+                    {
+                        ballScore++;
+                        ballLabel.setText("Ball: " + ballScore);
+                        Ball.clearBallScored();
+                    }
 
-                try { Thread.sleep(16); }
-                catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
-            }
-        });
-        animThread.setDaemon(true);
-        animThread.start();
+                    statusLabel.setText(Ball.getStatusMessage());
+                    Ball.repaint();
+
+                    try { Thread.sleep(16); }
+                    catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+                }
+            });
+            animThread.setDaemon(true);
+            animThread.start();
+        }
     }
 
     public void pauseAnimation() { running = false; }
@@ -339,11 +342,11 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         if (source == size1Item || source == size2Item || source == size3Item ||
             source == size4Item || source == size5Item)
         {
-            if      (size2Item.getState()) Ball.setBallSize(10);
-            else if (size2Item.getState()) Ball.setBallSize(20);
-            else if (size3Item.getState()) Ball.setBallSize(initSize);
-            else if (size4Item.getState()) Ball.setBallSize(40);
-            else if (size5Item.getState()) Ball.setBallSize(50);
+            if      (source == size1Item) Ball.setBallSize(10);
+            else if (source == size2Item) Ball.setBallSize(20);
+            else if (source == size3Item) Ball.setBallSize(initSize);
+            else if (source == size4Item) Ball.setBallSize(40);
+            else if (source == size5Item) Ball.setBallSize(50);
             size1Item.setState(false);
             size2Item.setState(false);
             size3Item.setState(false);
@@ -355,11 +358,11 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         if (source == speed1Item || source == speed2Item || source == speed3Item ||
             source == speed4Item || source == speed5Item)
         {
-            if      (speed1Item.getState()) Ball.setBallSpeed(1);
-            else if (speed2Item.getState()) Ball.setBallSpeed(2);
-            else if (speed3Item.getState()) Ball.setBallSpeed(initSpeed);
-            else if (speed4Item.getState()) Ball.setBallSpeed(4);
-            else if (speed5Item.getState()) Ball.setBallSpeed(5);
+            if      (source == speed1Item) Ball.setBallSpeed(1);
+            else if (source == speed2Item) Ball.setBallSpeed(2);
+            else if (source == speed3Item) Ball.setBallSpeed(initSpeed);
+            else if (source == speed4Item) Ball.setBallSpeed(4);
+            else if (source == speed5Item) Ball.setBallSpeed(5);
             speed1Item.setState(false);
             speed2Item.setState(false);
             speed3Item.setState(false);
@@ -373,15 +376,15 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
             source == saturnItem  || source == uranusItem || source == neptuneItem ||
             source == plutoItem)
         {
-            if (mercuryItem.getState()) Ball.setGravity(12.1);
-            else if (venusItem.getState()) Ball.setGravity(29.1);
-            else if (moonItem.getState()) Ball.setGravity(5.3);
-            else if (marsItem.getState()) Ball.setGravity(12.5);
-            else if (jupiterItem.getState()) Ball.setGravity(81.3);
-            else if (saturnItem.getState()) Ball.setGravity(34.4);
-            else if (uranusItem.getState()) Ball.setGravity(28.5);
-            else if (neptuneItem.getState()) Ball.setGravity(36.6);
-            else if (plutoItem.getState()) Ball.setGravity(2.1);
+            if      (source == mercuryItem) Ball.setGravity(12.1);
+            else if (source == venusItem)   Ball.setGravity(29.1);
+            else if (source == moonItem)    Ball.setGravity(5.3);
+            else if (source == marsItem)    Ball.setGravity(12.5);
+            else if (source == jupiterItem) Ball.setGravity(81.3);
+            else if (source == saturnItem)  Ball.setGravity(34.4);
+            else if (source == uranusItem)  Ball.setGravity(28.5);
+            else if (source == neptuneItem) Ball.setGravity(36.6);
+            else if (source == plutoItem)   Ball.setGravity(2.1);
             else Ball.setGravity(initGravity);
             mercuryItem.setState(false);
             venusItem.setState(false);
@@ -517,10 +520,10 @@ class Ballc extends Canvas
     public boolean playerScored() { return projScored; }
     public boolean ballScored() { return ballHitCannon; }
     public String getStatusMessage() { return statusMsg; }
-    public Rectangle getCannonBounds()
-    {
+    public Rectangle getCannonBounds() {
         Rectangle barrelBounds = poly.getBounds();
-        return new Rectangle(barrelBounds.x, barrelBounds.y, canvasWidth, canvasHeight);
+        return new Rectangle(barrelBounds.x, barrelBounds.y,
+            barrelBounds.width + (canvasWidth - ax2), barrelBounds.height + (canvasHeight - ay1));
     }
     public Rectangle getBallBounds() { return new Rectangle((int) ballX, (int) ballY, ballSize, ballSize); }
 
@@ -581,7 +584,7 @@ class Ballc extends Canvas
         int pivotY = canvasHeight - cannonBaseRadius;
 
         // Convert angle to radians
-        double angleRad = Math.toRadians(-cannonAngle);
+        double angleRad = Math.toRadians(cannonAngle - 90);
         double cosAngle = Math.cos(angleRad);
         double sinAngle = Math.sin(angleRad);
 
@@ -653,18 +656,13 @@ class Ballc extends Canvas
     // Calculates initial velocity components from angle and spawns projectile at barrel tip
     public void fireProjectile()
     {
-        if (!projActive) {
-            int baseX = canvasWidth - 60;
-            int baseY = canvasHeight - 60;
-            int cx = baseX + cannonBaseRadius;
-            int cy = baseY + cannonBaseRadius;
-
-            double angleRad = Math.toRadians(270 - cannonAngle);
-            projX = cx + Math.cos(angleRad) * barrelLength;
-            projY = cy + Math.sin(angleRad) * barrelLength;
-            projVX = Math.cos(angleRad) * projVelocity * projVelocityScale;
+        if (!projActive && cannonAlive)
+        {
+            double angleRad = Math.toRadians(-cannonAngle);
+            projX = (cx1 + cx2) / 2;
+            projY = (cy1 + cy2) / 2;
+            projVX = -Math.cos(angleRad) * projVelocity * projVelocityScale;
             projVY = Math.sin(angleRad) * projVelocity * projVelocityScale;
-
             projActive = true;
             projScored = false;
             ballHitCannon = false;
@@ -742,15 +740,16 @@ class Ballc extends Canvas
             }
 
             Rectangle br = getBallBounds();
+            boolean collided = false;
             for (Rectangle wall : walls)
             {
-                if (br.intersects(wall))
+                if (!collided && br.intersects(wall))
                 {
                     boolean fromLeft = (ballX + ballSize - ballDX) <= wall.x;
                     boolean fromRight = (ballX - ballDX) >= wall.x + wall.width;
                     if (fromLeft || fromRight) ballDX = -ballDX;
                     else ballDY = -ballDY;
-                    break;
+                    collided = true;
                 }
             }
 
@@ -792,14 +791,15 @@ class Ballc extends Canvas
             if (projActive)
             {
                 Rectangle pb = new Rectangle((int) projX - projSize / 2, (int) projY - projSize / 2, projSize, projSize);
+                boolean hitWall = false;
                 for (int i = walls.size() - 1; i >= 0; i--)
                 {
-                    if (pb.intersects(walls.elementAt(i)))
+                    if (!hitWall && pb.intersects(walls.elementAt(i)))
                     {
                         walls.removeElementAt(i);
                         projActive = false;
                         statusMsg = "";
-                        break;
+                        hitWall = true;
                     }
                 }
             }
