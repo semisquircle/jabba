@@ -609,8 +609,6 @@ class Ballc extends Canvas
     {
         int pivotX = canvasWidth - cannonBaseRadius;
         int pivotY = canvasHeight - cannonBaseRadius;
-
-        // Convert angle to radians
         double angleRad = Math.toRadians(cannonAngle - 90);
         double cosAngle = Math.cos(angleRad);
         double sinAngle = Math.sin(angleRad);
@@ -635,7 +633,6 @@ class Ballc extends Canvas
         cx1 = (int) (pivotX + (unrotatedCx1 - pivotX) * cosAngle - (unrotatedCy1 - pivotY) * sinAngle);
         cy1 = (int) (pivotY + (unrotatedCx1 - pivotX) * sinAngle + (unrotatedCy1 - pivotY) * cosAngle);
 
-        // Add points to the polygon
         poly.reset();
         poly.addPoint(ax1, ay1);
         poly.addPoint(ax2, ay2);
