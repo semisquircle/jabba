@@ -62,6 +62,7 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
 
     public CanonVSBall()
     {
+        // Set up the main Sheet frame
         Sheet.setLayout(new BorderLayout(0, 0));
         Sheet.setBackground(Color.lightGray);
         Sheet.setForeground(Color.black);
@@ -93,10 +94,6 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
         {
             e.printStackTrace();
         }
-
-        addWindowListener(this);
-        validate();
-        setVisible(true);
     }
 
     public void menu()
@@ -205,6 +202,18 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
         gbc.gridx = 4;
         gbc.gridy = 1;
         ControlPanel.add(AngleLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        ControlPanel.add(TimeLabel, gbc);
+
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        ControlPanel.add(BallLabel, gbc);
+
+        gbc.gridx = 3;
+        gbc.gridy = 1;
+        ControlPanel.add(PlayerLabel, gbc);
 
         ControlPanel.validate();
     }
