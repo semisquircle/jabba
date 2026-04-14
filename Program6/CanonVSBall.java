@@ -83,7 +83,7 @@ public class CanonVSBall extends Frame implements ActionListener, AdjustmentList
         ControlPanel.setLayout(gbl);
         ControlPanel.setBackground(Color.lightGray);
         ControlPanel.setVisible(true);
-        add("South", ControlPanel);
+        Sheet.add("South", ControlPanel);
 
         try
         {
