@@ -14,15 +14,15 @@ import java.util.Vector;
 
 public class CannonVSBall extends Frame implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener
 {
-    // Frame and layout
+    // Frame/layout
     private int sw = 650, sh = 480;
     GridBagLayout gbl = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();
     private Frame sheet = new Frame();
     private Panel controlPanel = new Panel();
 
-    // Menu bar and items
-    private MenuBar mmb;
+    // Menu bar
+    private MenuBar mmb = new MenuBar();
     private Menu controlMenu, paramMenu, envMenu;
     private Menu sizeMenu, speedMenu;
     private MenuItem runItem, pauseItem, restartItem, quitItem;
@@ -31,7 +31,23 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     private CheckboxMenuItem mercuryItem, venusItem, earthItem, moonItem, marsItem,
                              jupiterItem, saturnItem, uranusItem, neptuneItem, plutoItem;
 
-    // Scrollbar constants and controls
+    // Game state
+    private Ballc Ball;
+    private int playerScore = 0;
+    private int ballScore = 0;
+    private double elapsedTime = 0.0;
+    private volatile boolean running = false;
+    private Thread animThread;
+
+    private final int initSize = 30;
+    private final int initSpeed = 3;
+    private final int initAngle = 45;
+    private final int initVelocity = 650;
+    private final double initGravity = 32.2;
+
+    // Scrollbars
+    private Scrollbar velocityScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Scrollbar angleScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
     private final int sbVisible = 10;
     private final int sbUnit = 1;
     private final int sbBlock = 10;
@@ -40,13 +56,6 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     private final int minAngle = 0;
     private final int maxAngle = 90;
 
-    private final int initVelocity = 650;
-    private final int initAngle = 45;
-    private final double initGravity = 32.2;
-
-    private Scrollbar velocityScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
-    private Scrollbar angleScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
-
     // Labels
     private Label velocityLabel = new Label("Velocity: " + initVelocity + " ft/s", Label.CENTER);
     private Label angleLabel = new Label("Angle: " + initAngle + "\u00b0", Label.CENTER);
@@ -54,16 +63,6 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     private Label ballLabel = new Label("Ball: 0", Label.CENTER);
     private Label playerLabel = new Label("Player: 0", Label.CENTER);
     private Label statusLabel = new Label("", Label.CENTER);
-
-    // Game state
-    private Ballc Ball;
-
-    private int playerScore = 0;
-    private int ballScore = 0;
-    private double elapsedTime = 0.0;
-
-    private volatile boolean running = false;
-    private Thread animThread;
 
     public static void main(String[] args)
     {
@@ -75,10 +74,9 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         sheet.setLayout(new BorderLayout(0, 0));
         sheet.setBackground(Color.lightGray);
         sheet.setForeground(Color.black);
+        initMenu();
 
-        menu();
-
-        Ball = new Ballc(sw, sh, initVelocity, initAngle, initGravity);
+        Ball = new Ballc(sw, sh, initSize, initSpeed, initAngle, initVelocity, initGravity);
         Ball.setBackground(Color.white);
         Ball.addMouseListener(this);
         sheet.add("Center", Ball);
@@ -87,6 +85,8 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         controlPanel.setBackground(Color.lightGray);
         controlPanel.validate();
         controlPanel.setVisible(true);
+        try { initControls(); }
+        catch (Exception e) { e.printStackTrace(); }
         sheet.add("South", controlPanel);
 
         sheet.setMenuBar(mmb);
@@ -96,16 +96,11 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         sheet.validate();
         sheet.setVisible(true);
 
-        try { initControls(); }
-        catch (Exception e) { e.printStackTrace(); }
-
         Ball.repaint();
     }
 
-    public void menu()
+    public void initMenu()
     {
-        mmb = new MenuBar();
-
         controlMenu = new Menu("Control");
         runItem = controlMenu.add(new MenuItem("Run", new MenuShortcut(KeyEvent.VK_R)));
         pauseItem = controlMenu.add(new MenuItem("Pause", new MenuShortcut(KeyEvent.VK_P)));
@@ -120,7 +115,7 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         sizeMenu.add(size3Item = new CheckboxMenuItem("medium"));
         sizeMenu.add(size4Item = new CheckboxMenuItem("large"));
         sizeMenu.add(size5Item = new CheckboxMenuItem("x-large"));
-        size1Item.setState(true);
+        size3Item.setState(true);
 
         paramMenu.add(speedMenu = new Menu("Speed"));
         speedMenu.add(speed1Item = new CheckboxMenuItem("x-slow"));
@@ -221,7 +216,6 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         gbc.gridx = 4;
         gbc.gridy = 1;
         controlPanel.add(angleLabel, gbc);
-
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 5;
@@ -234,7 +228,6 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     // Starts the game loop on a background thread
     public void startAnimation()
     {
-        if (running) return;
         running = true;
         animThread = new Thread(() ->
         {
@@ -273,6 +266,14 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     public void restartGame()
     {
         running = false;
+
+        // Wait for old thread to die
+        if (animThread != null && animThread.isAlive())
+        {
+            try { animThread.join(); }
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+
         playerScore = 0;
         ballScore = 0;
         elapsedTime = 0.0;
@@ -280,7 +281,9 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         ballLabel.setText("Ball: 0");
         timeLabel.setText("Time: 0.0s");
         statusLabel.setText("");
+
         Ball.resetAll();
+
         startAnimation();
     }
 
@@ -336,16 +339,11 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         if (source == size1Item || source == size2Item || source == size3Item ||
             source == size4Item || source == size5Item)
         {
-            if (mercuryItem.getState()) Ball.setGravity(12.1);
-            else if (venusItem.getState()) Ball.setGravity(29.1);
-            else if (moonItem.getState()) Ball.setGravity(5.3);
-            else if (marsItem.getState()) Ball.setGravity(12.5);
-            else if (jupiterItem.getState()) Ball.setGravity(81.3);
-            else if (saturnItem.getState()) Ball.setGravity(34.4);
-            else if (uranusItem.getState()) Ball.setGravity(28.5);
-            else if (neptuneItem.getState()) Ball.setGravity(36.6);
-            else if (plutoItem.getState()) Ball.setGravity(2.1);
-            else Ball.setGravity(initGravity);
+            if      (size2Item.getState()) Ball.setBallSize(10);
+            else if (size2Item.getState()) Ball.setBallSize(20);
+            else if (size3Item.getState()) Ball.setBallSize(initSize);
+            else if (size4Item.getState()) Ball.setBallSize(40);
+            else if (size5Item.getState()) Ball.setBallSize(50);
             size1Item.setState(false);
             size2Item.setState(false);
             size3Item.setState(false);
@@ -357,11 +355,11 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         if (source == speed1Item || source == speed2Item || source == speed3Item ||
             source == speed4Item || source == speed5Item)
         {
-            if (size2Item.getState()) Ball.setBallDiameter(20);
-            else if (size3Item.getState()) Ball.setBallDiameter(30);
-            else if (size4Item.getState()) Ball.setBallDiameter(40);
-            else if (size5Item.getState()) Ball.setBallDiameter(50);
-            else Ball.setBallDiameter(10);
+            if      (speed1Item.getState()) Ball.setBallSpeed(1);
+            else if (speed2Item.getState()) Ball.setBallSpeed(2);
+            else if (speed3Item.getState()) Ball.setBallSpeed(initSpeed);
+            else if (speed4Item.getState()) Ball.setBallSpeed(4);
+            else if (speed5Item.getState()) Ball.setBallSpeed(5);
             speed1Item.setState(false);
             speed2Item.setState(false);
             speed3Item.setState(false);
@@ -375,11 +373,16 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
             source == saturnItem  || source == uranusItem || source == neptuneItem ||
             source == plutoItem)
         {
-            if (speed1Item.getState()) Ball.setBallSpeed(1);
-            else if (speed2Item.getState()) Ball.setBallSpeed(2);
-            else if (speed4Item.getState()) Ball.setBallSpeed(4);
-            else if (speed5Item.getState()) Ball.setBallSpeed(5);
-            else Ball.setBallSpeed(3);
+            if (mercuryItem.getState()) Ball.setGravity(12.1);
+            else if (venusItem.getState()) Ball.setGravity(29.1);
+            else if (moonItem.getState()) Ball.setGravity(5.3);
+            else if (marsItem.getState()) Ball.setGravity(12.5);
+            else if (jupiterItem.getState()) Ball.setGravity(81.3);
+            else if (saturnItem.getState()) Ball.setGravity(34.4);
+            else if (uranusItem.getState()) Ball.setGravity(28.5);
+            else if (neptuneItem.getState()) Ball.setGravity(36.6);
+            else if (plutoItem.getState()) Ball.setGravity(2.1);
+            else Ball.setGravity(initGravity);
             mercuryItem.setState(false);
             venusItem.setState(false);
             earthItem.setState(false);
@@ -443,7 +446,6 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
             Ball.repaint();
         }
     }
-
     public void mousePressed(MouseEvent e) { Ball.startDrag(e.getPoint()); }
     public void mouseReleased(MouseEvent e)
     {
@@ -465,12 +467,8 @@ class Ballc extends Canvas
     private int canvasWidth;
     private int canvasHeight;
 
-    // Initial state to be passed from main
-    private int velocity;
-    private int angle;
-    private double gravity;
-
     // Cannon
+    private int cannonAngle;
     private int ax1, ay1, ax2, ay2, cx2, cy2, cx1, cy1;
     Polygon poly = new Polygon();
     private boolean cannonAlive = true;
@@ -480,20 +478,22 @@ class Ballc extends Canvas
     private int barrelLength = 90;
 
     // Target ball
-    private int initBallDiam = 20;
-    private int ballDiam = initBallDiam;
-    private int initBallSpeed = 3;
-    private int ballSpeed = initBallSpeed;
+    private int ballSize;
+    private int ballSpeed;
     private double ballX, ballY;
     private int ballDX, ballDY;
     private boolean ballAlive = true;
+    private boolean ballHitCannon = false;
 
     // Projectile
-    private boolean projActive = false;
+    private int projVelocity;
+    private double projGravity;
     private double projX, projY;
     private double projVX, projVY;
+    private int projSize = 20;
+    private double projVelocityScale = 0.01;
+    private boolean projActive = false;
     private boolean projScored = false;
-    private boolean ballHitCannon = false;
     private String statusMsg = "";
 
     // Walls
@@ -501,13 +501,15 @@ class Ballc extends Canvas
     public Vector<Rectangle> walls = new Vector<Rectangle>();
     private Rectangle dragBox = null;
 
-    public Ballc(int w, int h, int v, int a, double g)
+    public Ballc(int w, int h, int size, int speed, int a, int v, double g)
     {
         canvasWidth = w;
         canvasHeight = h;
-        velocity = v;
-        angle = a;
-        gravity = g;
+        ballSize = size;
+        ballSpeed = speed;
+        cannonAngle = a;
+        projVelocity = v;
+        projGravity = g;
         resetBall();
     }
 
@@ -517,27 +519,22 @@ class Ballc extends Canvas
     public String getStatusMessage() { return statusMsg; }
     public Rectangle getCannonBounds()
     {
-        int w = getWidth();
-        int h = getHeight();
-        if (w > 0) canvasWidth = w;
-        if (h > 0) canvasHeight = h;
-        int baseX = canvasWidth - 60;
-        int baseY = canvasHeight - 60;
-        return new Rectangle(baseX - 10, baseY - 10, cannonBaseRadius * 2 + barrelLength + 20, cannonBaseRadius * 2 + 20);
+        Rectangle barrelBounds = poly.getBounds();
+        return new Rectangle(barrelBounds.x, barrelBounds.y, canvasWidth, canvasHeight);
     }
-    public Rectangle getBallBounds() { return new Rectangle((int) ballX, (int) ballY, ballDiam, ballDiam); }
+    public Rectangle getBallBounds() { return new Rectangle((int) ballX, (int) ballY, ballSize, ballSize); }
 
     // Setters
-    public void setVelocity(int v) { velocity = v; }
-    public void setCannonAngle(int a) { angle = a; }
-    public void setGravity(double g) { gravity = g; }
-    public void setBallDiameter(int d) { ballDiam = d; }
+    public void setBallSize(int s) { ballSize = s; }
     public void setBallSpeed(int s)
     {
         ballSpeed = s;
         ballDX = (ballDX < 0) ? -s : s;
         ballDY = (ballDY < 0) ? -s : s;
     }
+    public void setCannonAngle(int a) { cannonAngle = a; }
+    public void setVelocity(int v) { projVelocity = v; }
+    public void setGravity(double g) { projGravity = g; }
 
     // Resetting objects
     private void resetBall()
@@ -555,8 +552,6 @@ class Ballc extends Canvas
     }
     public void resetAll()
     {
-        ballDiam = initBallDiam;
-        ballSpeed = initBallSpeed;
         ballAlive = true;
         cannonAlive = true;
         walls.clear();
@@ -565,143 +560,6 @@ class Ballc extends Canvas
         repaint();
     }
     public void clearBallScored() { ballHitCannon = false; }
-
-    // Calculates initial velocity components from angle and spawns projectile at muzzle tip
-    public void fireProjectile()
-    {
-        if (projActive) return;
-        double scale = 0.15;
-        int baseX = canvasWidth - 60;
-        int baseY = canvasHeight - 60;
-        int cx = baseX + cannonBaseRadius;
-        int cy = baseY + cannonBaseRadius;
-        double barrelRad = Math.toRadians(270 - angle);
-        projX = cx + Math.cos(barrelRad) * barrelLength;
-        projY = cy + Math.sin(barrelRad) * barrelLength;
-        projVX = Math.cos(barrelRad) * velocity * scale;
-        projVY = Math.sin(barrelRad) * velocity * scale;
-        projActive = true;
-        projScored = false;
-        ballHitCannon = false;
-        statusMsg = "";
-    }
-
-    // Called once per frame: moves the target ball, applies gravity to projectile, checks all collisions
-    public void update()
-    {
-        if (ballAlive)
-        {
-            ballX += ballDX;
-            ballY += ballDY;
-
-            if (ballX <= 0)
-            {
-                ballX = 0;
-                ballDX =  Math.abs(ballDX);
-            }
-            if (ballX + ballDiam >= canvasWidth)
-            {
-                ballX = canvasWidth - ballDiam;
-                ballDX = -Math.abs(ballDX);
-            }
-            if (ballY <= 0) {
-                ballY = 0;
-                ballDY = Math.abs(ballDY);
-            }
-            if (ballY + ballDiam >= canvasHeight)
-            {
-                ballY = canvasHeight - ballDiam;
-                ballDY = -Math.abs(ballDY);
-            }
-
-            Rectangle br = getBallBounds();
-            for (Rectangle wall : walls)
-            {
-                if (br.intersects(wall))
-                {
-                    boolean fromLeft = (ballX + ballDiam - ballDX) <= wall.x;
-                    boolean fromRight = (ballX - ballDX) >= wall.x + wall.width;
-                    if (fromLeft || fromRight) ballDX = -ballDX;
-                    else ballDY = -ballDY;
-                    break;
-                }
-            }
-
-            if (cannonAlive && br.intersects(getCannonBounds()))
-            {
-                cannonAlive   = false;
-                ballHitCannon = true;
-            }
-        }
-
-        if (projActive)
-        {
-            // Gravity accumulates downward each frame; 0.016 = seconds per frame, 0.3 = pixel scale
-            projVY += gravity * 0.016 * 0.3;
-            projX += projVX;
-            projY += projVY;
-
-            boolean outBottom = projY > canvasHeight + 200;
-            boolean outSide = projX < -200 || projX > canvasWidth + 200;
-
-            if (outBottom || outSide)
-            {
-                projActive = false;
-                statusMsg = "Projectile will not return!";
-            }
-
-            if (projActive && ballAlive)
-            {
-                Rectangle pb = new Rectangle((int) projX - 5, (int) projY - 5, 10, 10);
-                if (pb.intersects(getBallBounds()))
-                {
-                    ballAlive  = false;
-                    projActive = false;
-                    projScored = true;
-                    statusMsg = "Target destroyed!";
-                }
-            }
-
-            if (projActive)
-            {
-                Rectangle pb = new Rectangle((int) projX - 5, (int) projY - 5, 10, 10);
-                for (int i = walls.size() - 1; i >= 0; i--)
-                {
-                    if (pb.intersects(walls.elementAt(i)))
-                    {
-                        walls.removeElementAt(i);
-                        projActive = false;
-                        statusMsg  = "";
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    public void startDrag(Point p) { dragStart = p; dragBox = null; }
-
-    // Finalizes a rectangle drag. Prevents drawing outside of canvas and overlap with ball or cannon
-    public void endDrag(Point end)
-    {
-        if (dragStart == null) return;
-        int x = Math.min(dragStart.x, end.x);
-        int y = Math.min(dragStart.y, end.y);
-        int w = Math.abs(end.x - dragStart.x);
-        int h = Math.abs(end.y - dragStart.y);
-        dragStart = null;
-        dragBox = null;
-        if (w < 4 || h < 4) return;
-
-        Rectangle newRect = new Rectangle(x, y, w, h);
-        Rectangle canvas = new Rectangle(0, 0, canvasWidth, canvasHeight);
-        if (!canvas.contains(newRect)) return;
-        if (newRect.intersects(getBallBounds())) return;
-        if (newRect.intersects(getCannonBounds())) return;
-
-        walls.removeIf(existing -> newRect.contains(existing));
-        walls.addElement(newRect);
-    }
 
     @Override
     public void setBounds(int x, int y, int w, int h)
@@ -717,60 +575,13 @@ class Ballc extends Canvas
         canvasHeight = h;
     }
 
-    public void setDragBox(Rectangle r) { dragBox = new Rectangle(r); }
-
-    public void paint(Graphics cg)
-    {
-        canvasWidth = getWidth();
-        canvasHeight = getHeight();
-        if (canvasWidth <= 0 || canvasHeight <= 0) return;
-
-        buffer = createImage(canvasWidth, canvasHeight);
-        if (g != null) g.dispose();
-        g = buffer.getGraphics();
-
-        g.setColor(Color.white);
-        g.fillRect(0, 0, canvasWidth, canvasHeight);
-
-        g.setColor(Color.yellow);
-        for (int i = 0; i < walls.size(); i++)
-        {
-            Rectangle temp = walls.elementAt(i);
-            g.fillRect(temp.x, temp.y, temp.width, temp.height);
-        }
-
-        if (dragBox != null && dragBox.width > 0 && dragBox.height > 0)
-        {
-            g.setColor(Color.darkGray);
-            g.drawRect(dragBox.x, dragBox.y, dragBox.width, dragBox.height);
-        }
-
-        if (ballAlive)
-        {
-            g.setColor(Color.red);
-            g.fillOval((int) ballX, (int) ballY, ballDiam, ballDiam);
-            g.setColor(Color.darkGray);
-            g.drawOval((int) ballX, (int) ballY, ballDiam, ballDiam);
-        }
-
-        if (projActive)
-        {
-            g.setColor(Color.black);
-            g.fillOval((int) projX - 5, (int) projY - 5, 10, 10);
-        }
-
-        if (cannonAlive) drawCannon(g);
-
-        cg.drawImage(buffer, 0, 0, null);
-    }
-
     public void drawCannon(Graphics g)
     {
         int pivotX = canvasWidth - cannonBaseRadius;
         int pivotY = canvasHeight - cannonBaseRadius;
 
         // Convert angle to radians
-        double angleRad = Math.toRadians(-angle);
+        double angleRad = Math.toRadians(-cannonAngle);
         double cosAngle = Math.cos(angleRad);
         double sinAngle = Math.sin(angleRad);
 
@@ -802,18 +613,196 @@ class Ballc extends Canvas
         poly.addPoint(cx1, cy1);
 
         // Draw the barrel
-        g.setColor(Color.darkGray);
+        g.setColor(Color.gray);
         g.fillPolygon(poly);
 
         // Draw the cannon base
-        g.setColor(Color.orange);
+        g.setColor(Color.decode("#643d14"));
         g.fillOval(pivotX - cannonBaseRadius, pivotY - cannonBaseRadius, cannonBaseRadius * 2, cannonBaseRadius * 2);
     }
 
+    // Walls
+    public void setDragBox(Rectangle r) { dragBox = new Rectangle(r); }
+    public void startDrag(Point p) { dragStart = p; dragBox = null; }
+    public void endDrag(Point end)
+    {
+        // Finalizes a rectangle drag. Prevents drawing outside of canvas and overlap with ball or cannon
+        if (dragStart == null) return;
+        int x = Math.min(dragStart.x, end.x);
+        int y = Math.min(dragStart.y, end.y);
+        int w = Math.abs(end.x - dragStart.x);
+        int h = Math.abs(end.y - dragStart.y);
+        dragStart = null;
+        dragBox = null;
+        if (w < 4 || h < 4) return;
+
+        Rectangle newRect = new Rectangle(x, y, w, h);
+        Rectangle canvas = new Rectangle(0, 0, canvasWidth, canvasHeight);
+        if (!canvas.contains(newRect)) return;
+        if (newRect.intersects(getBallBounds())) return;
+        if (newRect.intersects(getCannonBounds())) return;
+
+        walls.removeIf(existing -> newRect.contains(existing));
+        walls.addElement(newRect);
+    }
     public void addOne(Rectangle r) { walls.addElement(new Rectangle(r)); }
     public void removeOne(int i) { walls.removeElementAt(i); }
     public Rectangle getOne(int i) { return walls.elementAt(i); }
     public int getWallSize() { return walls.size(); }
-    public int getCanvasWidth() { return canvasWidth; }
-    public int getCanvasHeight() { return canvasHeight; }
+
+    // Calculates initial velocity components from angle and spawns projectile at barrel tip
+    public void fireProjectile()
+    {
+        if (!projActive) {
+            int baseX = canvasWidth - 60;
+            int baseY = canvasHeight - 60;
+            int cx = baseX + cannonBaseRadius;
+            int cy = baseY + cannonBaseRadius;
+
+            double angleRad = Math.toRadians(270 - cannonAngle);
+            projX = cx + Math.cos(angleRad) * barrelLength;
+            projY = cy + Math.sin(angleRad) * barrelLength;
+            projVX = Math.cos(angleRad) * projVelocity * projVelocityScale;
+            projVY = Math.sin(angleRad) * projVelocity * projVelocityScale;
+
+            projActive = true;
+            projScored = false;
+            ballHitCannon = false;
+            statusMsg = "";
+        }
+    }
+
+    public void paint(Graphics cg)
+    {
+        canvasWidth = getWidth();
+        canvasHeight = getHeight();
+
+        buffer = createImage(canvasWidth, canvasHeight);
+        if (g != null) g.dispose();
+        g = buffer.getGraphics();
+
+        g.setColor(Color.white);
+        g.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        g.setColor(Color.yellow);
+        for (int i = 0; i < walls.size(); i++)
+        {
+            Rectangle temp = walls.elementAt(i);
+            g.fillRect(temp.x, temp.y, temp.width, temp.height);
+        }
+
+        if (dragBox != null && dragBox.width > 0 && dragBox.height > 0)
+        {
+            g.setColor(Color.darkGray);
+            g.drawRect(dragBox.x, dragBox.y, dragBox.width, dragBox.height);
+        }
+
+        if (ballAlive)
+        {
+            g.setColor(Color.red);
+            g.fillOval((int) ballX, (int) ballY, ballSize, ballSize);
+        }
+
+        if (projActive)
+        {
+            g.setColor(Color.black);
+            g.fillOval((int) projX - projSize / 2, (int) projY - projSize / 2, projSize, projSize);
+        }
+
+        if (cannonAlive) drawCannon(g);
+
+        cg.drawImage(buffer, 0, 0, null);
+    }
+    // Called once per frame: moves the target ball, applies gravity to projectile, checks all collisions
+    public void update()
+    {
+        if (ballAlive)
+        {
+            ballX += ballDX;
+            ballY += ballDY;
+
+            if (ballX <= 0)
+            {
+                ballX = 0;
+                ballDX = Math.abs(ballDX);
+            }
+            if (ballX + ballSize >= canvasWidth)
+            {
+                ballX = canvasWidth - ballSize;
+                ballDX = -Math.abs(ballDX);
+            }
+            if (ballY <= 0) {
+                ballY = 0;
+                ballDY = Math.abs(ballDY);
+            }
+            if (ballY + ballSize >= canvasHeight)
+            {
+                ballY = canvasHeight - ballSize;
+                ballDY = -Math.abs(ballDY);
+            }
+
+            Rectangle br = getBallBounds();
+            for (Rectangle wall : walls)
+            {
+                if (br.intersects(wall))
+                {
+                    boolean fromLeft = (ballX + ballSize - ballDX) <= wall.x;
+                    boolean fromRight = (ballX - ballDX) >= wall.x + wall.width;
+                    if (fromLeft || fromRight) ballDX = -ballDX;
+                    else ballDY = -ballDY;
+                    break;
+                }
+            }
+
+            if (cannonAlive && br.intersects(getCannonBounds()))
+            {
+                cannonAlive = false;
+                ballHitCannon = true;
+            }
+        }
+
+        if (projActive)
+        {
+            // Gravity accumulates downward each frame; 0.016 = seconds per frame, 0.3 = pixel scale
+            projVY += projGravity * 0.016 * 0.3;
+            projX += projVX;
+            projY += projVY;
+
+            boolean outBottom = projY > canvasHeight + 200;
+            boolean outSide = projX < -200 || projX > canvasWidth + 200;
+
+            if (outBottom || outSide)
+            {
+                projActive = false;
+                statusMsg = "Projectile will not return!";
+            }
+
+            if (projActive && ballAlive)
+            {
+                Rectangle pb = new Rectangle((int) projX - 5, (int) projY - 5, 10, 10);
+                if (pb.intersects(getBallBounds()))
+                {
+                    ballAlive = false;
+                    projActive = false;
+                    projScored = true;
+                    statusMsg = "Target destroyed!";
+                }
+            }
+
+            if (projActive)
+            {
+                Rectangle pb = new Rectangle((int) projX - projSize / 2, (int) projY - projSize / 2, projSize, projSize);
+                for (int i = walls.size() - 1; i >= 0; i--)
+                {
+                    if (pb.intersects(walls.elementAt(i)))
+                    {
+                        walls.removeElementAt(i);
+                        projActive = false;
+                        statusMsg = "";
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
