@@ -9,7 +9,6 @@
 */
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.Vector;
 
@@ -19,48 +18,48 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     private int sw = 650, sh = 480;
     GridBagLayout gbl = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();
-    private Frame Sheet = new Frame();
-    private Panel ControlPanel = new Panel();
+    private Frame sheet = new Frame();
+    private Panel controlPanel = new Panel();
 
     // Menu bar and items
-    private MenuBar MMB;
-    private Menu ControlMenu, ParamMenu, EnvMenu;
-    private Menu SizeMenu, SpeedMenu;
-    private MenuItem RunItem, PauseItem, RestartItem, QuitItem;
-    private CheckboxMenuItem Size1Item, Size2Item, Size3Item, Size4Item, Size5Item;
-    private CheckboxMenuItem Speed1Item, Speed2Item, Speed3Item, Speed4Item, Speed5Item;
-    private CheckboxMenuItem MercuryItem, VenusItem, EarthItem, MoonItem, MarsItem,
-                             JupiterItem, SaturnItem, UranusItem, NeptuneItem, PlutoItem;
+    private MenuBar mmb;
+    private Menu controlMenu, paramMenu, envMenu;
+    private Menu sizeMenu, speedMenu;
+    private MenuItem runItem, pauseItem, restartItem, quitItem;
+    private CheckboxMenuItem size1Item, size2Item, size3Item, size4Item, size5Item;
+    private CheckboxMenuItem speed1Item, speed2Item, speed3Item, speed4Item, speed5Item;
+    private CheckboxMenuItem mercuryItem, venusItem, earthItem, moonItem, marsItem,
+                             jupiterItem, saturnItem, uranusItem, neptuneItem, plutoItem;
 
     // Scrollbar constants and controls
-    private final int SBVisible    = 10;
-    private final int SBUnit       = 1;
-    private final int SBBlock      = 10;
-    private final int MINVelocity  = 100;
-    private final int MAXVelocity  = 1200;
-    private final int INITVelocity = 650;
-    private final int MINAngle     = 0;
-    private final int MAXAngle     = 90;
-    private final int INITAngle    = 45;
+    private final int sbVisible = 10;
+    private final int sbUnit = 1;
+    private final int sbBlock = 10;
+    private final int minVelocity = 100;
+    private final int maxVelocity = 1200;
+    private final int minAngle = 0;
+    private final int maxAngle = 90;
 
-    private Scrollbar VelocityScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
-    private Scrollbar AngleScrollBar    = new Scrollbar(Scrollbar.HORIZONTAL);
+    private final int initVelocity = 650;
+    private final int initAngle = 45;
+    private final double initGravity = 32.2;
 
-    // Score, time, and status labels
-    private Label VelocityLabel = new Label("Velocity: " + INITVelocity + " ft/s", Label.CENTER);
-    private Label AngleLabel    = new Label("Angle: "    + INITAngle    + "\u00b0", Label.CENTER);
-    private Label TimeLabel     = new Label("Time: 0.0s",   Label.CENTER);
-    private Label BallLabel     = new Label("Ball: 0",      Label.CENTER);
-    private Label PlayerLabel   = new Label("Player: 0",    Label.CENTER);
-    private Label StatusLabel   = new Label("",             Label.CENTER);
+    private Scrollbar velocityScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Scrollbar angleScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+
+    // Labels
+    private Label velocityLabel = new Label("Velocity: " + initVelocity + " ft/s", Label.CENTER);
+    private Label angleLabel = new Label("Angle: " + initAngle + "\u00b0", Label.CENTER);
+    private Label timeLabel = new Label("Time: 0.0s", Label.CENTER);
+    private Label ballLabel = new Label("Ball: 0", Label.CENTER);
+    private Label playerLabel = new Label("Player: 0", Label.CENTER);
+    private Label statusLabel = new Label("", Label.CENTER);
 
     // Game state
     private Ballc Ball;
-    private int Velocity = INITVelocity;
-    private int Angle    = INITAngle;
 
-    private int    playerScore = 0;
-    private int    ballScore   = 0;
+    private int playerScore = 0;
+    private int ballScore = 0;
     private double elapsedTime = 0.0;
 
     private volatile boolean running = false;
@@ -73,28 +72,29 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
 
     public CannonVSBall()
     {
-        Sheet.setLayout(new BorderLayout(0, 0));
-        Sheet.setBackground(Color.lightGray);
-        Sheet.setForeground(Color.black);
+        sheet.setLayout(new BorderLayout(0, 0));
+        sheet.setBackground(Color.lightGray);
+        sheet.setForeground(Color.black);
 
         menu();
 
-        Ball = new Ballc(sw, sh, INITVelocity, INITAngle);
+        Ball = new Ballc(sw, sh, initVelocity, initAngle, initGravity);
         Ball.setBackground(Color.white);
         Ball.addMouseListener(this);
-        Sheet.add("Center", Ball);
+        sheet.add("Center", Ball);
 
-        ControlPanel.setLayout(gbl);
-        ControlPanel.setBackground(Color.lightGray);
-        ControlPanel.setVisible(true);
-        Sheet.add("South", ControlPanel);
+        controlPanel.setLayout(gbl);
+        controlPanel.setBackground(Color.lightGray);
+        controlPanel.validate();
+        controlPanel.setVisible(true);
+        sheet.add("South", controlPanel);
 
-        Sheet.setMenuBar(MMB);
-        Sheet.addWindowListener(this);
-        Sheet.setSize(sw, sh);
-        Sheet.setResizable(true);
-        Sheet.setVisible(true);
-        Sheet.validate();
+        sheet.setMenuBar(mmb);
+        sheet.addWindowListener(this);
+        sheet.setSize(sw, sh);
+        sheet.setResizable(true);
+        sheet.validate();
+        sheet.setVisible(true);
 
         try { initControls(); }
         catch (Exception e) { e.printStackTrace(); }
@@ -104,141 +104,131 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
 
     public void menu()
     {
-        MMB = new MenuBar();
+        mmb = new MenuBar();
 
-        ControlMenu = new Menu("Control");
-        RunItem     = ControlMenu.add(new MenuItem("Run",     new MenuShortcut(KeyEvent.VK_R)));
-        PauseItem   = ControlMenu.add(new MenuItem("Pause",   new MenuShortcut(KeyEvent.VK_P)));
-        RestartItem = ControlMenu.add(new MenuItem("Restart"));
-        QuitItem    = ControlMenu.add(new MenuItem("Quit"));
-        MMB.add(ControlMenu);
+        controlMenu = new Menu("Control");
+        runItem = controlMenu.add(new MenuItem("Run", new MenuShortcut(KeyEvent.VK_R)));
+        pauseItem = controlMenu.add(new MenuItem("Pause", new MenuShortcut(KeyEvent.VK_P)));
+        restartItem = controlMenu.add(new MenuItem("Restart"));
+        quitItem = controlMenu.add(new MenuItem("Quit"));
+        mmb.add(controlMenu);
 
-        ParamMenu = new Menu("Parameters");
-        ParamMenu.add(SizeMenu = new Menu("Size"));
-        SizeMenu.add(Size1Item = new CheckboxMenuItem("10"));
-        SizeMenu.add(Size2Item = new CheckboxMenuItem("20"));
-        SizeMenu.add(Size3Item = new CheckboxMenuItem("30"));
-        SizeMenu.add(Size4Item = new CheckboxMenuItem("40"));
-        SizeMenu.add(Size5Item = new CheckboxMenuItem("50"));
-        Size1Item.setState(true);
+        paramMenu = new Menu("Parameters");
+        paramMenu.add(sizeMenu = new Menu("Size"));
+        sizeMenu.add(size1Item = new CheckboxMenuItem("x-small"));
+        sizeMenu.add(size2Item = new CheckboxMenuItem("small"));
+        sizeMenu.add(size3Item = new CheckboxMenuItem("medium"));
+        sizeMenu.add(size4Item = new CheckboxMenuItem("large"));
+        sizeMenu.add(size5Item = new CheckboxMenuItem("x-large"));
+        size1Item.setState(true);
 
-        ParamMenu.add(SpeedMenu = new Menu("Speed"));
-        SpeedMenu.add(Speed1Item = new CheckboxMenuItem("1"));
-        SpeedMenu.add(Speed2Item = new CheckboxMenuItem("2"));
-        SpeedMenu.add(Speed3Item = new CheckboxMenuItem("3"));
-        SpeedMenu.add(Speed4Item = new CheckboxMenuItem("4"));
-        SpeedMenu.add(Speed5Item = new CheckboxMenuItem("5"));
-        Speed3Item.setState(true);
-        MMB.add(ParamMenu);
+        paramMenu.add(speedMenu = new Menu("Speed"));
+        speedMenu.add(speed1Item = new CheckboxMenuItem("x-slow"));
+        speedMenu.add(speed2Item = new CheckboxMenuItem("slow"));
+        speedMenu.add(speed3Item = new CheckboxMenuItem("medium"));
+        speedMenu.add(speed4Item = new CheckboxMenuItem("fast"));
+        speedMenu.add(speed5Item = new CheckboxMenuItem("x-fast"));
+        speed3Item.setState(true);
+        mmb.add(paramMenu);
 
-        EnvMenu = new Menu("Environment");
-        EnvMenu.add(MercuryItem = new CheckboxMenuItem("Mercury"));
-        EnvMenu.add(VenusItem   = new CheckboxMenuItem("Venus"));
-        EnvMenu.add(EarthItem   = new CheckboxMenuItem("Earth"));
-        EnvMenu.add(MoonItem    = new CheckboxMenuItem("Moon"));
-        EnvMenu.add(MarsItem    = new CheckboxMenuItem("Mars"));
-        EnvMenu.add(JupiterItem = new CheckboxMenuItem("Jupiter"));
-        EnvMenu.add(SaturnItem  = new CheckboxMenuItem("Saturn"));
-        EnvMenu.add(UranusItem  = new CheckboxMenuItem("Uranus"));
-        EnvMenu.add(NeptuneItem = new CheckboxMenuItem("Neptune"));
-        EnvMenu.add(PlutoItem   = new CheckboxMenuItem("Pluto"));
-        EarthItem.setState(true);
-        MMB.add(EnvMenu);
+        envMenu = new Menu("Environment");
+        envMenu.add(mercuryItem = new CheckboxMenuItem("Mercury"));
+        envMenu.add(venusItem = new CheckboxMenuItem("Venus"));
+        envMenu.add(earthItem = new CheckboxMenuItem("Earth"));
+        envMenu.add(moonItem = new CheckboxMenuItem("Moon"));
+        envMenu.add(marsItem = new CheckboxMenuItem("Mars"));
+        envMenu.add(jupiterItem = new CheckboxMenuItem("Jupiter"));
+        envMenu.add(saturnItem = new CheckboxMenuItem("Saturn"));
+        envMenu.add(uranusItem = new CheckboxMenuItem("Uranus"));
+        envMenu.add(neptuneItem = new CheckboxMenuItem("Neptune"));
+        envMenu.add(plutoItem = new CheckboxMenuItem("Pluto"));
+        earthItem.setState(true);
+        mmb.add(envMenu);
 
-        RunItem.addActionListener(this);
-        PauseItem.addActionListener(this);
-        RestartItem.addActionListener(this);
-        QuitItem.addActionListener(this);
+        runItem.addActionListener(this);
+        pauseItem.addActionListener(this);
+        restartItem.addActionListener(this);
+        quitItem.addActionListener(this);
 
-        Size1Item.addItemListener(this);  Size2Item.addItemListener(this);
-        Size3Item.addItemListener(this);  Size4Item.addItemListener(this);
-        Size5Item.addItemListener(this);
+        size1Item.addItemListener(this);
+        size2Item.addItemListener(this);
+        size3Item.addItemListener(this);
+        size4Item.addItemListener(this);
+        size5Item.addItemListener(this);
 
-        Speed1Item.addItemListener(this); Speed2Item.addItemListener(this);
-        Speed3Item.addItemListener(this); Speed4Item.addItemListener(this);
-        Speed5Item.addItemListener(this);
+        speed1Item.addItemListener(this);
+        speed2Item.addItemListener(this);
+        speed3Item.addItemListener(this);
+        speed4Item.addItemListener(this);
+        speed5Item.addItemListener(this);
 
-        MercuryItem.addItemListener(this); VenusItem.addItemListener(this);
-        EarthItem.addItemListener(this);   MoonItem.addItemListener(this);
-        MarsItem.addItemListener(this);    JupiterItem.addItemListener(this);
-        SaturnItem.addItemListener(this);  UranusItem.addItemListener(this);
-        NeptuneItem.addItemListener(this); PlutoItem.addItemListener(this);
+        mercuryItem.addItemListener(this);
+        venusItem.addItemListener(this);
+        earthItem.addItemListener(this);
+        moonItem.addItemListener(this);
+        marsItem.addItemListener(this);
+        jupiterItem.addItemListener(this);
+        saturnItem.addItemListener(this);
+        uranusItem.addItemListener(this);
+        neptuneItem.addItemListener(this);
+        plutoItem.addItemListener(this);
     }
 
     public void initControls() throws Exception, IOException
     {
-        gbc.insets    = new Insets(2, 10, 2, 10);
-        gbc.fill      = GridBagConstraints.HORIZONTAL;
-        gbc.weightx   = 1.0;
-        gbc.weighty   = 0.0;
+        gbc.insets = new Insets(2, 10, 2, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
         gbc.gridwidth = 1;
 
-        VelocityScrollBar.setMaximum(MAXVelocity + SBVisible);
-        VelocityScrollBar.setMinimum(MINVelocity);
-        VelocityScrollBar.setUnitIncrement(SBUnit);
-        VelocityScrollBar.setBlockIncrement(SBBlock);
-        VelocityScrollBar.setValue(INITVelocity);
-        VelocityScrollBar.setVisibleAmount(SBVisible);
-        VelocityScrollBar.setBackground(Color.gray);
-        VelocityScrollBar.addAdjustmentListener(this);
-        gbc.gridx = 0; gbc.gridy = 0;
-        ControlPanel.add(VelocityScrollBar, gbc);
+        velocityScrollBar.setMaximum(maxVelocity + sbVisible);
+        velocityScrollBar.setMinimum(minVelocity);
+        velocityScrollBar.setUnitIncrement(sbUnit);
+        velocityScrollBar.setBlockIncrement(sbBlock);
+        velocityScrollBar.setValue(initVelocity);
+        velocityScrollBar.setVisibleAmount(sbVisible);
+        velocityScrollBar.setBackground(Color.gray);
+        velocityScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        controlPanel.add(velocityScrollBar, gbc);
 
-        AngleScrollBar.setMaximum(MAXAngle + SBVisible);
-        AngleScrollBar.setMinimum(MINAngle);
-        AngleScrollBar.setUnitIncrement(SBUnit);
-        AngleScrollBar.setBlockIncrement(SBBlock);
-        AngleScrollBar.setValue(INITAngle);
-        AngleScrollBar.setVisibleAmount(SBVisible);
-        AngleScrollBar.setBackground(Color.gray);
-        AngleScrollBar.addAdjustmentListener(this);
-        gbc.gridx = 4; gbc.gridy = 0;
-        ControlPanel.add(AngleScrollBar, gbc);
+        angleScrollBar.setMaximum(maxAngle + sbVisible);
+        angleScrollBar.setMinimum(minAngle);
+        angleScrollBar.setUnitIncrement(sbUnit);
+        angleScrollBar.setBlockIncrement(sbBlock);
+        angleScrollBar.setValue(initAngle);
+        angleScrollBar.setVisibleAmount(sbVisible);
+        angleScrollBar.setBackground(Color.gray);
+        angleScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        controlPanel.add(angleScrollBar, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; ControlPanel.add(VelocityLabel, gbc);
-        gbc.gridx = 1; gbc.gridy = 1; ControlPanel.add(TimeLabel,     gbc);
-        gbc.gridx = 2; gbc.gridy = 1; ControlPanel.add(BallLabel,     gbc);
-        gbc.gridx = 3; gbc.gridy = 1; ControlPanel.add(PlayerLabel,   gbc);
-        gbc.gridx = 4; gbc.gridy = 1; ControlPanel.add(AngleLabel,    gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        controlPanel.add(velocityLabel, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        controlPanel.add(timeLabel, gbc);
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        controlPanel.add(ballLabel, gbc);
+        gbc.gridx = 3;
+        gbc.gridy = 1;
+        controlPanel.add(playerLabel, gbc);
+        gbc.gridx = 4;
+        gbc.gridy = 1;
+        controlPanel.add(angleLabel, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 5;
-        ControlPanel.add(StatusLabel, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 5;
+        controlPanel.add(statusLabel, gbc);
         gbc.gridwidth = 1;
 
-        ControlPanel.validate();
-    }
-
-    // Returns gravitational acceleration in ft/s^2 for the selected planet
-    public double getGravity()
-    {
-        if (MercuryItem.getState()) return 12.1;
-        if (VenusItem.getState())   return 29.1;
-        if (MoonItem.getState())    return  5.3;
-        if (MarsItem.getState())    return 12.5;
-        if (JupiterItem.getState()) return 81.3;
-        if (SaturnItem.getState())  return 34.4;
-        if (UranusItem.getState())  return 28.5;
-        if (NeptuneItem.getState()) return 36.6;
-        if (PlutoItem.getState())   return  2.1;
-        return 32.2;
-    }
-
-    public int getBallDiameter()
-    {
-        if (Size2Item.getState()) return 20;
-        if (Size3Item.getState()) return 30;
-        if (Size4Item.getState()) return 40;
-        if (Size5Item.getState()) return 50;
-        return 10;
-    }
-
-    public int getBallSpeed()
-    {
-        if (Speed1Item.getState()) return 1;
-        if (Speed2Item.getState()) return 2;
-        if (Speed4Item.getState()) return 4;
-        if (Speed5Item.getState()) return 5;
-        return 3;
+        controlPanel.validate();
     }
 
     // Starts the game loop on a background thread
@@ -250,24 +240,24 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         {
             while (running)
             {
-                Ball.update(getGravity());
+                Ball.update();
                 elapsedTime += 0.016;
-                TimeLabel.setText(String.format("Time: %.1fs", elapsedTime));
+                timeLabel.setText(String.format("Time: %.1fs", elapsedTime));
 
                 if (Ball.playerScored())
                 {
                     playerScore++;
-                    PlayerLabel.setText("Player: " + playerScore);
+                    playerLabel.setText("Player: " + playerScore);
                     Ball.resetProjectile();
                 }
                 if (Ball.ballScored())
                 {
                     ballScore++;
-                    BallLabel.setText("Ball: " + ballScore);
+                    ballLabel.setText("Ball: " + ballScore);
                     Ball.clearBallScored();
                 }
 
-                StatusLabel.setText(Ball.getStatusMessage());
+                statusLabel.setText(Ball.getStatusMessage());
                 Ball.repaint();
 
                 try { Thread.sleep(16); }
@@ -282,15 +272,15 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
 
     public void restartGame()
     {
-        running      = false;
-        playerScore  = 0;
-        ballScore    = 0;
-        elapsedTime  = 0.0;
-        PlayerLabel.setText("Player: 0");
-        BallLabel.setText("Ball: 0");
-        TimeLabel.setText("Time: 0.0s");
-        StatusLabel.setText("");
-        Ball.resetAll(getBallDiameter(), getBallSpeed());
+        running = false;
+        playerScore = 0;
+        ballScore = 0;
+        elapsedTime = 0.0;
+        playerLabel.setText("Player: 0");
+        ballLabel.setText("Ball: 0");
+        timeLabel.setText("Time: 0.0s");
+        statusLabel.setText("");
+        Ball.resetAll();
         startAnimation();
     }
 
@@ -298,72 +288,108 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
     {
         running = false;
 
-        RunItem.removeActionListener(this);
-        PauseItem.removeActionListener(this);
-        RestartItem.removeActionListener(this);
-        QuitItem.removeActionListener(this);
+        runItem.removeActionListener(this);
+        pauseItem.removeActionListener(this);
+        restartItem.removeActionListener(this);
+        quitItem.removeActionListener(this);
 
-        Size1Item.removeItemListener(this);  Size2Item.removeItemListener(this);
-        Size3Item.removeItemListener(this);  Size4Item.removeItemListener(this);
-        Size5Item.removeItemListener(this);
+        size1Item.removeItemListener(this);
+        size2Item.removeItemListener(this);
+        size3Item.removeItemListener(this);
+        size4Item.removeItemListener(this);
+        size5Item.removeItemListener(this);
 
-        Speed1Item.removeItemListener(this); Speed2Item.removeItemListener(this);
-        Speed3Item.removeItemListener(this); Speed4Item.removeItemListener(this);
-        Speed5Item.removeItemListener(this);
+        speed1Item.removeItemListener(this);
+        speed2Item.removeItemListener(this);
+        speed3Item.removeItemListener(this);
+        speed4Item.removeItemListener(this);
+        speed5Item.removeItemListener(this);
 
-        MercuryItem.removeItemListener(this); VenusItem.removeItemListener(this);
-        EarthItem.removeItemListener(this);   MoonItem.removeItemListener(this);
-        MarsItem.removeItemListener(this);    JupiterItem.removeItemListener(this);
-        SaturnItem.removeItemListener(this);  UranusItem.removeItemListener(this);
-        NeptuneItem.removeItemListener(this); PlutoItem.removeItemListener(this);
+        mercuryItem.removeItemListener(this);
+        venusItem.removeItemListener(this);
+        earthItem.removeItemListener(this);
+        moonItem.removeItemListener(this);
+        marsItem.removeItemListener(this);
+        jupiterItem.removeItemListener(this);
+        saturnItem.removeItemListener(this);
+        uranusItem.removeItemListener(this);
+        neptuneItem.removeItemListener(this);
+        plutoItem.removeItemListener(this);
 
-        Sheet.removeWindowListener(this);
-        Sheet.dispose();
+        sheet.removeWindowListener(this);
+        sheet.dispose();
     }
 
     public void actionPerformed(ActionEvent e)
     {
         Object source = e.getSource();
-        if (source == RunItem)     startAnimation();
-        if (source == PauseItem)   pauseAnimation();
-        if (source == RestartItem) restartGame();
-        if (source == QuitItem)    stop();
+        if (source == runItem) startAnimation();
+        if (source == pauseItem) pauseAnimation();
+        if (source == restartItem) restartGame();
+        if (source == quitItem) stop();
     }
 
     public void itemStateChanged(ItemEvent e)
     {
         CheckboxMenuItem source = (CheckboxMenuItem) e.getSource();
 
-        if (source == Size1Item || source == Size2Item || source == Size3Item ||
-            source == Size4Item || source == Size5Item)
+        if (source == size1Item || source == size2Item || source == size3Item ||
+            source == size4Item || source == size5Item)
         {
-            Size1Item.setState(false); Size2Item.setState(false);
-            Size3Item.setState(false); Size4Item.setState(false);
-            Size5Item.setState(false);
+            if (mercuryItem.getState()) Ball.setGravity(12.1);
+            else if (venusItem.getState()) Ball.setGravity(29.1);
+            else if (moonItem.getState()) Ball.setGravity(5.3);
+            else if (marsItem.getState()) Ball.setGravity(12.5);
+            else if (jupiterItem.getState()) Ball.setGravity(81.3);
+            else if (saturnItem.getState()) Ball.setGravity(34.4);
+            else if (uranusItem.getState()) Ball.setGravity(28.5);
+            else if (neptuneItem.getState()) Ball.setGravity(36.6);
+            else if (plutoItem.getState()) Ball.setGravity(2.1);
+            else Ball.setGravity(initGravity);
+            size1Item.setState(false);
+            size2Item.setState(false);
+            size3Item.setState(false);
+            size4Item.setState(false);
+            size5Item.setState(false);
             source.setState(true);
-            Ball.setBallDiameter(getBallDiameter());
         }
 
-        if (source == Speed1Item || source == Speed2Item || source == Speed3Item ||
-            source == Speed4Item || source == Speed5Item)
+        if (source == speed1Item || source == speed2Item || source == speed3Item ||
+            source == speed4Item || source == speed5Item)
         {
-            Speed1Item.setState(false); Speed2Item.setState(false);
-            Speed3Item.setState(false); Speed4Item.setState(false);
-            Speed5Item.setState(false);
+            if (size2Item.getState()) Ball.setBallDiameter(20);
+            else if (size3Item.getState()) Ball.setBallDiameter(30);
+            else if (size4Item.getState()) Ball.setBallDiameter(40);
+            else if (size5Item.getState()) Ball.setBallDiameter(50);
+            else Ball.setBallDiameter(10);
+            speed1Item.setState(false);
+            speed2Item.setState(false);
+            speed3Item.setState(false);
+            speed4Item.setState(false);
+            speed5Item.setState(false);
             source.setState(true);
-            Ball.setBallSpeed(getBallSpeed());
         }
 
-        if (source == MercuryItem || source == VenusItem || source == EarthItem  ||
-            source == MoonItem    || source == MarsItem   || source == JupiterItem ||
-            source == SaturnItem  || source == UranusItem || source == NeptuneItem ||
-            source == PlutoItem)
+        if (source == mercuryItem || source == venusItem || source == earthItem ||
+            source == moonItem || source == marsItem || source == jupiterItem ||
+            source == saturnItem  || source == uranusItem || source == neptuneItem ||
+            source == plutoItem)
         {
-            MercuryItem.setState(false); VenusItem.setState(false);
-            EarthItem.setState(false);   MoonItem.setState(false);
-            MarsItem.setState(false);    JupiterItem.setState(false);
-            SaturnItem.setState(false);  UranusItem.setState(false);
-            NeptuneItem.setState(false); PlutoItem.setState(false);
+            if (speed1Item.getState()) Ball.setBallSpeed(1);
+            else if (speed2Item.getState()) Ball.setBallSpeed(2);
+            else if (speed4Item.getState()) Ball.setBallSpeed(4);
+            else if (speed5Item.getState()) Ball.setBallSpeed(5);
+            else Ball.setBallSpeed(3);
+            mercuryItem.setState(false);
+            venusItem.setState(false);
+            earthItem.setState(false);
+            moonItem.setState(false);
+            marsItem.setState(false);
+            jupiterItem.setState(false);
+            saturnItem.setState(false);
+            uranusItem.setState(false);
+            neptuneItem.setState(false);
+            plutoItem.setState(false);
             source.setState(true);
         }
     }
@@ -373,32 +399,32 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         Scrollbar source = (Scrollbar) e.getSource();
         int value = e.getValue();
 
-        if (source == VelocityScrollBar)
+        if (source == velocityScrollBar)
         {
-            Velocity = value;
-            VelocityLabel.setText("Velocity: " + value + " ft/s");
+            Ball.setVelocity(value);
+            velocityLabel.setText("Velocity: " + value + " ft/s");
         }
-        if (source == AngleScrollBar)
+        if (source == angleScrollBar)
         {
-            Angle = value;
-            AngleLabel.setText("Angle: " + value + "\u00b0");
-            Ball.setAngle(value);
+            Ball.setCannonAngle(value);
+            angleLabel.setText("Angle: " + value + "\u00b0");
         }
+
         Ball.repaint();
     }
 
-    public void windowClosing(WindowEvent e)     { stop(); }
-    public void windowClosed(WindowEvent e)      {}
-    public void windowOpened(WindowEvent e)      {}
-    public void windowActivated(WindowEvent e)   {}
+    public void windowClosing(WindowEvent e) { stop(); }
+    public void windowClosed(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
     public void windowDeactivated(WindowEvent e) {}
-    public void windowIconified(WindowEvent e)   {}
+    public void windowIconified(WindowEvent e) {}
     public void windowDeiconified(WindowEvent e) {}
 
     public void componentResized(ComponentEvent e) {}
-    public void componentMoved(ComponentEvent e)   {}
-    public void componentShown(ComponentEvent e)   {}
-    public void componentHidden(ComponentEvent e)  {}
+    public void componentMoved(ComponentEvent e) {}
+    public void componentShown(ComponentEvent e) {}
+    public void componentHidden(ComponentEvent e) {}
 
     public void mouseClicked(MouseEvent e)
     {
@@ -406,7 +432,7 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         {
             if (Ball.getCannonBounds().contains(e.getPoint()))
             {
-                Ball.fireProjectile(Velocity, Angle, getGravity());
+                Ball.fireProjectile();
                 if (!running) startAnimation();
             }
         }
@@ -418,12 +444,16 @@ public class CannonVSBall extends Frame implements ActionListener, AdjustmentLis
         }
     }
 
-    public void mousePressed(MouseEvent e)  { Ball.startDrag(e.getPoint()); }
-    public void mouseReleased(MouseEvent e) { Ball.endDrag(e.getPoint()); Ball.repaint(); }
-    public void mouseMoved(MouseEvent e)    {}
-    public void mouseDragged(MouseEvent e)  {}
-    public void mouseEntered(MouseEvent e)  {}
-    public void mouseExited(MouseEvent e)   {}
+    public void mousePressed(MouseEvent e) { Ball.startDrag(e.getPoint()); }
+    public void mouseReleased(MouseEvent e)
+    {
+        Ball.endDrag(e.getPoint());
+        Ball.repaint();
+    }
+    public void mouseMoved(MouseEvent e) {}
+    public void mouseDragged(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {}
 }
 
 class Ballc extends Canvas
@@ -435,150 +465,164 @@ class Ballc extends Canvas
     private int canvasWidth;
     private int canvasHeight;
 
-    Polygon poly;
-    private float a1, a2, c2, c1;
+    // Initial state to be passed from main
+    private int velocity;
+    private int angle;
+    private double gravity;
 
-    // Cannon state
-    private int     cannonAngle      = 45;
-    private boolean cannonAlive      = true;
-    private int     cannonBaseRadius = 20;
-    private int     barrelLength     = 50;
-    private int     barrelWidth      = 10;
+    // Cannon
+    private int ax1, ay1, ax2, ay2, cx2, cy2, cx1, cy1;
+    Polygon poly = new Polygon();
+    private boolean cannonAlive = true;
+    private int cannonBaseRadius = 20;
+    private int barrelWidth = 18;
+    private int halfBarrelWidth = barrelWidth / 2;
+    private int barrelLength = 90;
 
-    // Target ball state
-    private int     ballDiam  = 20;
-    private int     ballSpeed = 3;
-    private double  ballX, ballY;
-    private int     ballDX, ballDY;
+    // Target ball
+    private int initBallDiam = 20;
+    private int ballDiam = initBallDiam;
+    private int initBallSpeed = 3;
+    private int ballSpeed = initBallSpeed;
+    private double ballX, ballY;
+    private int ballDX, ballDY;
     private boolean ballAlive = true;
 
-    // Projectile state
-    private boolean projActive    = false;
-    private double  projX, projY;
-    private double  projVX, projVY;
-    private double  gravity       = 32.2;
-    private boolean projScored    = false;
+    // Projectile
+    private boolean projActive = false;
+    private double projX, projY;
+    private double projVX, projVY;
+    private boolean projScored = false;
     private boolean ballHitCannon = false;
-    private String  statusMsg     = "";
+    private String statusMsg = "";
 
-    // Rectangle drag state
+    // Walls
     private Point dragStart = null;
-
     public Vector<Rectangle> walls = new Vector<Rectangle>();
     private Rectangle dragBox = null;
 
-    public Ballc(int w, int h, int v, int a)
+    public Ballc(int w, int h, int v, int a, double g)
     {
-        canvasWidth  = w;
+        canvasWidth = w;
         canvasHeight = h;
-        cannonAngle  = a;
+        velocity = v;
+        angle = a;
+        gravity = g;
         resetBall();
     }
 
+    // Getters
+    public boolean playerScored() { return projScored; }
+    public boolean ballScored() { return ballHitCannon; }
+    public String getStatusMessage() { return statusMsg; }
+    public Rectangle getCannonBounds()
+    {
+        int w = getWidth();
+        int h = getHeight();
+        if (w > 0) canvasWidth = w;
+        if (h > 0) canvasHeight = h;
+        int baseX = canvasWidth - 60;
+        int baseY = canvasHeight - 60;
+        return new Rectangle(baseX - 10, baseY - 10, cannonBaseRadius * 2 + barrelLength + 20, cannonBaseRadius * 2 + 20);
+    }
+    public Rectangle getBallBounds() { return new Rectangle((int) ballX, (int) ballY, ballDiam, ballDiam); }
+
+    // Setters
+    public void setVelocity(int v) { velocity = v; }
+    public void setCannonAngle(int a) { angle = a; }
+    public void setGravity(double g) { gravity = g; }
+    public void setBallDiameter(int d) { ballDiam = d; }
+    public void setBallSpeed(int s)
+    {
+        ballSpeed = s;
+        ballDX = (ballDX < 0) ? -s : s;
+        ballDY = (ballDY < 0) ? -s : s;
+    }
+
+    // Resetting objects
     private void resetBall()
     {
-        ballX  = 60;
-        ballY  = 60;
+        ballX = 60;
+        ballY = 60;
         ballDX = ballSpeed;
         ballDY = ballSpeed;
     }
-
     public void resetProjectile()
     {
         projActive = false;
         projScored = false;
-        statusMsg  = "";
+        statusMsg = "";
     }
-
-    public void clearBallScored() { ballHitCannon = false; }
-
-    public void resetAll(int diam, int speed)
+    public void resetAll()
     {
-        ballDiam    = diam;
-        ballSpeed   = speed;
-        ballAlive   = true;
+        ballDiam = initBallDiam;
+        ballSpeed = initBallSpeed;
+        ballAlive = true;
         cannonAlive = true;
         walls.clear();
         resetBall();
         resetProjectile();
         repaint();
     }
-
-    public void setAngle(int a)        { cannonAngle = a; }
-    public void setCannonAngle(int a)  { cannonAngle = a; }
-    public void setBallDiameter(int d) { ballDiam = d; }
-    public void setBallSpeed(int s)
-    {
-        ballSpeed = s;
-        ballDX = (ballDX < 0 ? -s : s);
-        ballDY = (ballDY < 0 ? -s : s);
-    }
-
-    public boolean playerScored()     { return projScored; }
-    public boolean ballScored()       { return ballHitCannon; }
-    public String  getStatusMessage() { return statusMsg; }
-
-    public Rectangle getCannonBounds()
-    {
-        int w = getWidth();
-        int h = getHeight();
-        if (w > 0) canvasWidth  = w;
-        if (h > 0) canvasHeight = h;
-        int baseX = canvasWidth  - 60;
-        int baseY = canvasHeight - 60;
-        return new Rectangle(baseX - 10, baseY - 10,
-                             cannonBaseRadius * 2 + barrelLength + 20,
-                             cannonBaseRadius * 2 + 20);
-    }
-
-    public Rectangle getBallBounds()
-    {
-        return new Rectangle((int) ballX, (int) ballY, ballDiam, ballDiam);
-    }
+    public void clearBallScored() { ballHitCannon = false; }
 
     // Calculates initial velocity components from angle and spawns projectile at muzzle tip
-    public void fireProjectile(int velocity, int angle, double grav)
+    public void fireProjectile()
     {
         if (projActive) return;
-        gravity = grav;
-        double scale     = 0.15;
-        int    baseX     = canvasWidth  - 60;
-        int    baseY     = canvasHeight - 60;
-        int    cx        = baseX + cannonBaseRadius;
-        int    cy        = baseY + cannonBaseRadius;
+        double scale = 0.15;
+        int baseX = canvasWidth - 60;
+        int baseY = canvasHeight - 60;
+        int cx = baseX + cannonBaseRadius;
+        int cy = baseY + cannonBaseRadius;
         double barrelRad = Math.toRadians(270 - angle);
-        projX  = cx + Math.cos(barrelRad) * barrelLength;
-        projY  = cy + Math.sin(barrelRad) * barrelLength;
+        projX = cx + Math.cos(barrelRad) * barrelLength;
+        projY = cy + Math.sin(barrelRad) * barrelLength;
         projVX = Math.cos(barrelRad) * velocity * scale;
         projVY = Math.sin(barrelRad) * velocity * scale;
-        projActive    = true;
-        projScored    = false;
+        projActive = true;
+        projScored = false;
         ballHitCannon = false;
-        statusMsg     = "";
+        statusMsg = "";
     }
 
     // Called once per frame: moves the target ball, applies gravity to projectile, checks all collisions
-    public void update(double grav)
+    public void update()
     {
         if (ballAlive)
         {
             ballX += ballDX;
             ballY += ballDY;
 
-            if (ballX <= 0)                      { ballX = 0;                       ballDX =  Math.abs(ballDX); }
-            if (ballX + ballDiam >= canvasWidth)  { ballX = canvasWidth  - ballDiam; ballDX = -Math.abs(ballDX); }
-            if (ballY <= 0)                      { ballY = 0;                       ballDY =  Math.abs(ballDY); }
-            if (ballY + ballDiam >= canvasHeight) { ballY = canvasHeight - ballDiam; ballDY = -Math.abs(ballDY); }
+            if (ballX <= 0)
+            {
+                ballX = 0;
+                ballDX =  Math.abs(ballDX);
+            }
+            if (ballX + ballDiam >= canvasWidth)
+            {
+                ballX = canvasWidth - ballDiam;
+                ballDX = -Math.abs(ballDX);
+            }
+            if (ballY <= 0) {
+                ballY = 0;
+                ballDY = Math.abs(ballDY);
+            }
+            if (ballY + ballDiam >= canvasHeight)
+            {
+                ballY = canvasHeight - ballDiam;
+                ballDY = -Math.abs(ballDY);
+            }
 
             Rectangle br = getBallBounds();
             for (Rectangle wall : walls)
             {
                 if (br.intersects(wall))
                 {
-                    boolean fromLeft  = (ballX + ballDiam - ballDX) <= wall.x;
-                    boolean fromRight = (ballX - ballDX)             >= wall.x + wall.width;
+                    boolean fromLeft = (ballX + ballDiam - ballDX) <= wall.x;
+                    boolean fromRight = (ballX - ballDX) >= wall.x + wall.width;
                     if (fromLeft || fromRight) ballDX = -ballDX;
-                    else                       ballDY = -ballDY;
+                    else ballDY = -ballDY;
                     break;
                 }
             }
@@ -593,17 +637,17 @@ class Ballc extends Canvas
         if (projActive)
         {
             // Gravity accumulates downward each frame; 0.016 = seconds per frame, 0.3 = pixel scale
-            projVY += grav * 0.016 * 0.3;
-            projX  += projVX;
-            projY  += projVY;
+            projVY += gravity * 0.016 * 0.3;
+            projX += projVX;
+            projY += projVY;
 
             boolean outBottom = projY > canvasHeight + 200;
-            boolean outSide   = projX < -200 || projX > canvasWidth + 200;
+            boolean outSide = projX < -200 || projX > canvasWidth + 200;
 
             if (outBottom || outSide)
             {
                 projActive = false;
-                statusMsg  = "Projectile will not return!";
+                statusMsg = "Projectile will not return!";
             }
 
             if (projActive && ballAlive)
@@ -614,7 +658,7 @@ class Ballc extends Canvas
                     ballAlive  = false;
                     projActive = false;
                     projScored = true;
-                    statusMsg  = "Target destroyed!";
+                    statusMsg = "Target destroyed!";
                 }
             }
 
@@ -646,14 +690,14 @@ class Ballc extends Canvas
         int w = Math.abs(end.x - dragStart.x);
         int h = Math.abs(end.y - dragStart.y);
         dragStart = null;
-        dragBox   = null;
+        dragBox = null;
         if (w < 4 || h < 4) return;
 
         Rectangle newRect = new Rectangle(x, y, w, h);
-        Rectangle canvas  = new Rectangle(0, 0, canvasWidth, canvasHeight);
-        if (!canvas.contains(newRect))             return;
-        if (newRect.intersects(getBallBounds()))    return;
-        if (newRect.intersects(getCannonBounds()))  return;
+        Rectangle canvas = new Rectangle(0, 0, canvasWidth, canvasHeight);
+        if (!canvas.contains(newRect)) return;
+        if (newRect.intersects(getBallBounds())) return;
+        if (newRect.intersects(getCannonBounds())) return;
 
         walls.removeIf(existing -> newRect.contains(existing));
         walls.addElement(newRect);
@@ -667,13 +711,17 @@ class Ballc extends Canvas
         canvasHeight = h;
     }
 
-    public void reSize(int w, int h) { canvasWidth = w; canvasHeight = h; }
+    public void reSize(int w, int h)
+    {
+        canvasWidth = w;
+        canvasHeight = h;
+    }
 
     public void setDragBox(Rectangle r) { dragBox = new Rectangle(r); }
 
     public void paint(Graphics cg)
     {
-        canvasWidth  = getWidth();
+        canvasWidth = getWidth();
         canvasHeight = getHeight();
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
@@ -684,7 +732,7 @@ class Ballc extends Canvas
         g.setColor(Color.white);
         g.fillRect(0, 0, canvasWidth, canvasHeight);
 
-        g.setColor(Color.blue);
+        g.setColor(Color.yellow);
         for (int i = 0; i < walls.size(); i++)
         {
             Rectangle temp = walls.elementAt(i);
@@ -711,56 +759,61 @@ class Ballc extends Canvas
             g.fillOval((int) projX - 5, (int) projY - 5, 10, 10);
         }
 
-        drawPolygon(poly);
-        fillPolygon(poly);
-
         if (cannonAlive) drawCannon(g);
 
         cg.drawImage(buffer, 0, 0, null);
     }
 
-    public void drawPolygon(Polygon p)
-    {
-        if (p == null) return;
-        g.setColor(Color.black);
-        g.drawPolygon(p);
-    }
-
-    public void fillPolygon(Polygon p)
-    {
-        if (p == null) return;
-        g.setColor(Color.darkGray);
-        g.fillPolygon(p);
-    }
-
-    // Draws the cannon at bottom-right using Graphics2D rotation so the barrel stays a true rectangle
     public void drawCannon(Graphics g)
     {
-        Graphics2D g2 = (Graphics2D) g;
+        int pivotX = canvasWidth - cannonBaseRadius;
+        int pivotY = canvasHeight - cannonBaseRadius;
 
-        AffineTransform old = g2.getTransform();
+        // Convert angle to radians
+        double angleRad = Math.toRadians(-angle);
+        double cosAngle = Math.cos(angleRad);
+        double sinAngle = Math.sin(angleRad);
 
-        int baseX = canvasWidth  - 60;
-        int baseY = canvasHeight - 60;
+        // Unrotated points relative to the pivot
+        int unrotatedAx1 = pivotX - halfBarrelWidth;
+        int unrotatedAy1 = pivotY;
+        int unrotatedAx2 = pivotX + halfBarrelWidth;
+        int unrotatedAy2 = pivotY;
+        int unrotatedCx1 = pivotX - halfBarrelWidth;
+        int unrotatedCy1 = pivotY - barrelLength;
+        int unrotatedCx2 = pivotX + halfBarrelWidth;
+        int unrotatedCy2 = pivotY - barrelLength;
 
-        g2.setColor(Color.black);
-        g2.fillOval(baseX, baseY, cannonBaseRadius * 2, cannonBaseRadius * 2);
+        // Rotate points around the pivot
+        ax1 = (int) (pivotX + (unrotatedAx1 - pivotX) * cosAngle - (unrotatedAy1 - pivotY) * sinAngle);
+        ay1 = (int) (pivotY + (unrotatedAx1 - pivotX) * sinAngle + (unrotatedAy1 - pivotY) * cosAngle);
+        ax2 = (int) (pivotX + (unrotatedAx2 - pivotX) * cosAngle - (unrotatedAy2 - pivotY) * sinAngle);
+        ay2 = (int) (pivotY + (unrotatedAx2 - pivotX) * sinAngle + (unrotatedAy2 - pivotY) * cosAngle);
+        cx2 = (int) (pivotX + (unrotatedCx2 - pivotX) * cosAngle - (unrotatedCy2 - pivotY) * sinAngle);
+        cy2 = (int) (pivotY + (unrotatedCx2 - pivotX) * sinAngle + (unrotatedCy2 - pivotY) * cosAngle);
+        cx1 = (int) (pivotX + (unrotatedCx1 - pivotX) * cosAngle - (unrotatedCy1 - pivotY) * sinAngle);
+        cy1 = (int) (pivotY + (unrotatedCx1 - pivotX) * sinAngle + (unrotatedCy1 - pivotY) * cosAngle);
 
-        int cx = baseX + cannonBaseRadius;
-        int cy = baseY + cannonBaseRadius;
+        // Add points to the polygon
+        poly.reset();
+        poly.addPoint(ax1, ay1);
+        poly.addPoint(ax2, ay2);
+        poly.addPoint(cx2, cy2);
+        poly.addPoint(cx1, cy1);
 
-        g2.rotate(Math.toRadians(270 - cannonAngle), cx, cy);
+        // Draw the barrel
+        g.setColor(Color.darkGray);
+        g.fillPolygon(poly);
 
-        g2.setColor(Color.darkGray);
-        g2.fillRect(cx, cy - barrelWidth / 2, barrelLength, barrelWidth);
-
-        g2.setTransform(old);
+        // Draw the cannon base
+        g.setColor(Color.orange);
+        g.fillOval(pivotX - cannonBaseRadius, pivotY - cannonBaseRadius, cannonBaseRadius * 2, cannonBaseRadius * 2);
     }
 
-    public void addOne(Rectangle r)  { walls.addElement(new Rectangle(r)); }
-    public void removeOne(int i)     { walls.removeElementAt(i); }
-    public Rectangle getOne(int i)   { return walls.elementAt(i); }
-    public int getWallSize()         { return walls.size(); }
-    public int getCanvasWidth()      { return canvasWidth; }
-    public int getCanvasHeight()     { return canvasHeight; }
+    public void addOne(Rectangle r) { walls.addElement(new Rectangle(r)); }
+    public void removeOne(int i) { walls.removeElementAt(i); }
+    public Rectangle getOne(int i) { return walls.elementAt(i); }
+    public int getWallSize() { return walls.size(); }
+    public int getCanvasWidth() { return canvasWidth; }
+    public int getCanvasHeight() { return canvasHeight; }
 }
