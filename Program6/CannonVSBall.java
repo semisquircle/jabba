@@ -615,11 +615,9 @@ class Ballc extends Canvas
         poly.addPoint(cx2, cy2);
         poly.addPoint(cx1, cy1);
 
-        // Draw the barrel
+        // Draw
         g.setColor(Color.gray);
         g.fillPolygon(poly);
-
-        // Draw the cannon base
         g.setColor(Color.decode("#643d14"));
         g.fillOval(pivotX - cannonBaseRadius, pivotY - cannonBaseRadius, cannonBaseRadius * 2, cannonBaseRadius * 2);
     }
@@ -698,7 +696,7 @@ class Ballc extends Canvas
         }
 
         if (projActive) {
-            g.setColor(Color.black);
+            g.setColor(Color.blue);
             g.fillOval((int) projX - projSize / 2, (int) projY - projSize / 2, projSize, projSize);
         }
 
