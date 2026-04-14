@@ -9,23 +9,51 @@
 */
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.Vector;
 
-public class CanonVSBall implements ActionListener, WindowListener, ItemListener
+public class CanonVSBall extends Frame implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener
 {
+	// Frame
 	private int sw = 650, sh = 480;
-	private Frame EditorFrame;
-	private TextArea EditArea;
+	GridBagLayout gbl = new GridBagLayout();
+    GridBagConstraints gbc = new GridBagConstraints();
+	private Frame Sheet = new Frame();
+	private Panel ControlPanel = new Panel();
+
+	// Menu
 	private MenuBar MMB;
-	private Menu FILE, TEXT;
-	private Menu NEW, SIZE, FONT;
-	private MenuItem FOLDER, DOCUMENT;
-	private MenuItem QUIT;
-	private CheckboxMenuItem S10, S14, S18;
-	private CheckboxMenuItem TNR, CO;
-	private int FontType = Font.PLAIN;
-	private String FontStyle = "TimesNewRoman";
-	private int FontSize = 14;
+	private Menu ControlMenu, ParamMenu, EnvMenu;
+	private Menu SizeMenu, SpeedMenu;
+	private MenuItem RunItem, PauseItem, RestartItem, QuitItem;
+	private CheckboxMenuItem Size1Item, Size2Item, Size3Item, Size4Item, Size5Item;
+	private CheckboxMenuItem Speed1Item, Speed2Item, Speed3Item, Speed4Item, Speed5Item;
+	private CheckboxMenuItem MercuryItem, VenusItem, EarthItem, MarsItem, JupiterItem, SaturnItem, UranusItem, NeptuneItem, PlutoItem;
+
+	// Scrollbars
+	private final int SBVisible = 10;
+    private final int SBUnit = 1;
+    private final int SBBlock = 10;
+    private final int MINVelocity = 100;
+    private final int MAXVelocity = 1200;
+    private final int INITVelocity = 650;
+    private final int MINAngle = 0;
+    private final int MAXAngle = 90;
+    private final int INITAngle = 45;
+    private Scrollbar VelocityScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Scrollbar AngleScrollBar = new Scrollbar(Scrollbar.HORIZONTAL);
+    private Label VelocityLabel = new Label("Initial Velocity", Label.CENTER);
+    private Label AngleLabel = new Label("Angle", Label.CENTER);
+
+	// Labels
+    private Label TimeLabel = new Label("Time:", Label.CENTER);
+    private Label BallLabel = new Label("Ball:", Label.CENTER);
+    private Label PlayerLabel = new Label("Player:", Label.CENTER);
+
+	// Canvas
+    private Ballc Ball;
+    private int Velocity = INITVelocity;
+    private int Angle = INITAngle;
 
 	public static void main(String[] args)
 	{
@@ -34,105 +62,243 @@ public class CanonVSBall implements ActionListener, WindowListener, ItemListener
 
 	public CanonVSBall()
 	{
-		EditArea = new TextArea("", sw - 10, sh - 10, TextArea.SCROLLBARS_BOTH);
-		EditorFrame = new Frame("Editor");
-		EditorFrame.setLayout(new BorderLayout(0, 0));
-		EditorFrame.setBackground(Color.lightGray);
-		EditorFrame.setForeground(Color.black);
-		EditorFrame.add("Center", EditArea);
-		MMB = new MenuBar();
-		FILE = new Menu("FILE");
-		NEW = new Menu("New");
-		FOLDER = NEW.add(new MenuItem("Folder", new MenuShortcut(KeyEvent.VK_F)));
-		DOCUMENT = NEW.add(new MenuItem("Document", new MenuShortcut(KeyEvent.VK_D)));
-		FILE.add(NEW);
-		FILE.addSeparator();
-		QUIT = FILE.add(new MenuItem("Quit", new MenuShortcut(KeyEvent.VK_Q)));
-		TEXT = new Menu("TEXT");
-		SIZE = new Menu("Size");
-		FONT = new Menu("Font");
-		SIZE.add(S10 = new CheckboxMenuItem("10"));
-		SIZE.add(S14 = new CheckboxMenuItem("14"));
-		SIZE.add(S18 = new CheckboxMenuItem("18"));
-		S14.setState(true);
-		TEXT.add(SIZE);
-		FONT.add(TNR = new CheckboxMenuItem("TimesNewRoman"));
-		FONT.add(CO = new CheckboxMenuItem("Courier"));
-		TNR.setState(true);
-		TEXT.add(FONT);
-		MMB.add(FILE);
-		MMB.add(TEXT);
-		DOCUMENT.addActionListener(this);
-		FOLDER.addActionListener(this);
-		QUIT.addActionListener(this);
-		S10.addItemListener(this);
-		S14.addItemListener(this);
-		S18.addItemListener(this);
-		TNR.addItemListener(this);
-		CO.addItemListener(this);
-		EditorFrame.setMenuBar(MMB);
-		EditorFrame.addWindowListener(this);
-		EditorFrame.setSize(sw, sh);
-		EditorFrame.setResizable(true);
-		EditorFrame.setVisible(true);
-		EditorFrame.validate();
-		setTheFont();
+		Sheet.setLayout(new BorderLayout(0, 0));
+		Sheet.setBackground(Color.lightGray);
+		Sheet.setForeground(Color.black);
+        addWindowListener(this);
+
+		menu();
+
+		Sheet.setMenuBar(MMB);
+		Sheet.addWindowListener(this);
+		Sheet.setSize(sw, sh);
+		Sheet.setResizable(true);
+		Sheet.setVisible(true);
+		Sheet.validate();
+
+        Ball = new Ballc(INITVelocity, INITAngle);
+        Ball.setBackground(Color.white);
+        Ball.addMouseListener(this);
+        Sheet.add("Center", Ball);
+
+		ControlPanel.setLayout(gbl);
+        ControlPanel.setBackground(Color.lightGray);
+        ControlPanel.setVisible(true);
+        add("South", ControlPanel);
+
+        try
+        {
+            initControls();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
 	}
 
-	public void setTheFont()
+	public void menu()
 	{
-		FontSize = 10;
-		if (S10.getState() == true) FontSize = 10;
-		if (S14.getState() == true) FontSize = 14;
-		if (S18.getState() == true) FontSize = 18;
-		FontStyle = "TimesNewRoman";
-		if (TNR.getState() == true) FontStyle = "TimesNewRoman";
-		if (CO.getState() == true) FontStyle = "Courier";
-		FontType = Font.PLAIN;
-		EditArea.setFont(new Font(FontStyle, FontType, FontSize));
+		MMB = new MenuBar();
+
+		ControlMenu = new Menu("Control");
+		RunItem = ControlMenu.add(new MenuItem("Run", new MenuShortcut(KeyEvent.VK_R)));
+		PauseItem = ControlMenu.add(new MenuItem("Pause", new MenuShortcut(KeyEvent.VK_P)));
+		RestartItem = ControlMenu.add(new MenuItem("Restart"));
+		QuitItem = ControlMenu.add(new MenuItem("Quit"));
+		MMB.add(ControlMenu);
+
+		ParamMenu = new Menu("Parameters");
+		ParamMenu.add(SizeMenu = new Menu("Size"));
+		SizeMenu.add(Size1Item = new CheckboxMenuItem("10"));
+		SizeMenu.add(Size2Item = new CheckboxMenuItem("20"));
+		SizeMenu.add(Size3Item = new CheckboxMenuItem("30"));
+		SizeMenu.add(Size4Item = new CheckboxMenuItem("40"));
+		SizeMenu.add(Size5Item = new CheckboxMenuItem("50"));
+		Size1Item.setState(true);
+		ParamMenu.add(SpeedMenu = new Menu("Speed"));
+		SpeedMenu.add(Speed1Item = new CheckboxMenuItem("10"));
+		SpeedMenu.add(Speed2Item = new CheckboxMenuItem("20"));
+		SpeedMenu.add(Speed3Item = new CheckboxMenuItem("30"));
+		SpeedMenu.add(Speed4Item = new CheckboxMenuItem("40"));
+		SpeedMenu.add(Speed5Item = new CheckboxMenuItem("50"));
+		Speed1Item.setState(true);
+		MMB.add(ParamMenu);
+
+		EnvMenu = new Menu("Environment");
+		EnvMenu.add(MercuryItem = new CheckboxMenuItem("Mercury"));
+		EnvMenu.add(VenusItem = new CheckboxMenuItem("Venus"));
+		EnvMenu.add(EarthItem = new CheckboxMenuItem("Earth"));
+		EnvMenu.add(MarsItem = new CheckboxMenuItem("Mars"));
+		EnvMenu.add(JupiterItem = new CheckboxMenuItem("Jupiter"));
+		EnvMenu.add(SaturnItem = new CheckboxMenuItem("Saturn"));
+		EnvMenu.add(UranusItem = new CheckboxMenuItem("Uranus"));
+		EnvMenu.add(NeptuneItem = new CheckboxMenuItem("Neptune"));
+		EnvMenu.add(PlutoItem = new CheckboxMenuItem("Pluto"));
+		MMB.add(EnvMenu);
+
+		RunItem.addActionListener(this);
+		PauseItem.addActionListener(this);
+		RestartItem.addActionListener(this);
+		QuitItem.addActionListener(this);
+		Size1Item.addItemListener(this);
+		Size2Item.addItemListener(this);
+		Size3Item.addItemListener(this);
+		Size4Item.addItemListener(this);
+		Size5Item.addItemListener(this);
+		Speed1Item.addItemListener(this);
+		Speed2Item.addItemListener(this);
+		Speed3Item.addItemListener(this);
+		Speed4Item.addItemListener(this);
+		Speed5Item.addItemListener(this);
+		MercuryItem.addItemListener(this);
+		VenusItem.addItemListener(this);
+		EarthItem.addItemListener(this);
+		MarsItem.addItemListener(this);
+		SaturnItem.addItemListener(this);
+		SaturnItem.addItemListener(this);
+		UranusItem.addItemListener(this);
+		NeptuneItem.addItemListener(this);
+		PlutoItem.addItemListener(this);
 	}
+
+    public void initControls() throws Exception, IOException
+    {
+        gbc.insets = new Insets(0, 20, 10, 20);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
+        gbc.gridwidth = 1;
+
+        // Scrollbars
+        VelocityScrollBar.setMaximum(MAXVelocity);
+        VelocityScrollBar.setMinimum(MINVelocity);
+        VelocityScrollBar.setUnitIncrement(SBUnit);
+        VelocityScrollBar.setBlockIncrement(SBBlock);
+        VelocityScrollBar.setValue(INITVelocity);
+        VelocityScrollBar.setVisibleAmount(SBVisible);
+        VelocityScrollBar.setBackground(Color.gray);
+        VelocityScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        ControlPanel.add(VelocityScrollBar, gbc);
+
+        AngleScrollBar.setMaximum(MAXAngle);
+        AngleScrollBar.setMinimum(MINAngle);
+        AngleScrollBar.setUnitIncrement(SBUnit);
+        AngleScrollBar.setBlockIncrement(SBBlock);
+        AngleScrollBar.setValue(INITAngle);
+        AngleScrollBar.setVisibleAmount(SBVisible);
+        AngleScrollBar.setBackground(Color.gray);
+        AngleScrollBar.addAdjustmentListener(this);
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        ControlPanel.add(AngleScrollBar, gbc);
+
+        // Labels
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        ControlPanel.add(VelocityLabel, gbc);
+
+        gbc.gridx = 4;
+        gbc.gridy = 1;
+        ControlPanel.add(AngleLabel, gbc);
+
+        ControlPanel.validate();
+    }
 
 	public void stop()
 	{
-		DOCUMENT.removeActionListener(this);
-		FOLDER.removeActionListener(this);
-		QUIT.removeActionListener(this);
-		S10.removeItemListener(this);
-		S14.removeItemListener(this);
-		S18.removeItemListener(this);
-		TNR.removeItemListener(this);
-		CO.removeItemListener(this);
-		EditorFrame.removeWindowListener(this);
-		EditorFrame.dispose();
-	}
-
-	public void itemStateChanged(ItemEvent e)
-	{
-		CheckboxMenuItem checkbox = (CheckboxMenuItem) e.getSource();
-		if (checkbox == S10 || checkbox == S14 || checkbox == S18)
-		{
-			S10.setState(false);
-			S14.setState(false);
-			S18.setState(false);
-			checkbox.setState(true);
-		}
-		if (checkbox == TNR || checkbox == CO)
-		{
-			TNR.setState(false);
-			CO.setState(false);
-			checkbox.setState(true);
-		}
-		setTheFont();
+		RunItem.removeActionListener(this);
+		PauseItem.removeActionListener(this);
+		RestartItem.removeActionListener(this);
+		QuitItem.removeActionListener(this);
+		Size1Item.removeItemListener(this);
+		Size2Item.removeItemListener(this);
+		Size3Item.removeItemListener(this);
+		Size4Item.removeItemListener(this);
+		Size5Item.removeItemListener(this);
+		Speed1Item.removeItemListener(this);
+		Speed2Item.removeItemListener(this);
+		Speed3Item.removeItemListener(this);
+		Speed4Item.removeItemListener(this);
+		Speed5Item.removeItemListener(this);
+		MercuryItem.removeItemListener(this);
+		VenusItem.removeItemListener(this);
+		EarthItem.removeItemListener(this);
+		MarsItem.removeItemListener(this);
+		SaturnItem.removeItemListener(this);
+		SaturnItem.removeItemListener(this);
+		UranusItem.removeItemListener(this);
+		NeptuneItem.removeItemListener(this);
+		PlutoItem.removeItemListener(this);
+		Sheet.removeWindowListener(this);
+		Sheet.dispose();
 	}
 
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
-		if (source == FOLDER) EditArea.append("\nFolder\n");
-		if (source == DOCUMENT) EditArea.append("\nDOCUMENT\n");
-		if (source == QUIT) stop();
+		if (source == RunItem) {}
+		if (source == PauseItem) {}
+		if (source == RestartItem) {}
+		if (source == QuitItem) stop();
 	}
 
+	public void itemStateChanged(ItemEvent e)
+	{
+		CheckboxMenuItem source = (CheckboxMenuItem) e.getSource();
+		if (
+			source == Size1Item || source == Size2Item || source == Size3Item || source == Size4Item || source == Size5Item)
+		{
+			Size1Item.setState(false);
+			Size2Item.setState(false);
+			Size3Item.setState(false);
+			Size4Item.setState(false);
+			Size5Item.setState(false);
+			source.setState(true);
+		}
+		if (source == Speed1Item || source == Speed2Item || source == Speed3Item || source == Speed4Item || source == Speed5Item)
+		{
+			Speed1Item.setState(false);
+			Speed2Item.setState(false);
+			Speed3Item.setState(false);
+			Speed4Item.setState(false);
+			Speed5Item.setState(false);
+			source.setState(true);
+		}
+		if (source == MercuryItem || source == VenusItem || source == EarthItem || source == MarsItem || source == JupiterItem || source == SaturnItem || source == UranusItem || source == NeptuneItem || source == PlutoItem)
+		{
+			MercuryItem.setState(false);
+			VenusItem.setState(false);
+			EarthItem.setState(false);
+			MarsItem.setState(false);
+			JupiterItem.setState(false);
+			SaturnItem.setState(false);
+			UranusItem.setState(false);
+			NeptuneItem.setState(false);
+			PlutoItem.setState(false);
+			source.setState(true);
+		}
+	}
+
+	public void adjustmentValueChanged(AdjustmentEvent e)
+    {
+        Scrollbar source = (Scrollbar) e.getSource();
+		int value = e.getValue();
+
+        if (source == VelocityScrollBar)
+        {
+			Velocity = value;
+        }
+        if (source == AngleScrollBar)
+        {
+			Angle = value;
+        }
+
+        Ball.repaint();
+    }
+
+	// Window listeners
 	public void windowClosing(WindowEvent e) {
 		stop();
 	}
@@ -142,6 +308,21 @@ public class CanonVSBall implements ActionListener, WindowListener, ItemListener
 	public void windowDeactivated(WindowEvent e) {}
 	public void windowIconified(WindowEvent e) {}
 	public void windowDeiconified(WindowEvent e) {}
+
+	// Component listeners
+    public void componentResized(ComponentEvent e) {}
+    public void componentMoved(ComponentEvent e) {}
+    public void componentShown(ComponentEvent e) {}
+    public void componentHidden(ComponentEvent e) {}
+
+	// Mouse listeners
+	public void mousePressed(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) {}
+	public void mouseClicked(MouseEvent e) {}
+	public void mouseMoved(MouseEvent e) {}
+	public void mouseDragged(MouseEvent e) {}
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
 }
 
 class Ballc extends Canvas
@@ -158,10 +339,8 @@ class Ballc extends Canvas
     public Vector<Rectangle> walls = new Vector<Rectangle>();
     private Rectangle dragBox = null;
 
-    public Ballc(Point screen)
+    public Ballc(int v, int a)
     {
-        canvasWidth = screen.x;
-        canvasHeight = screen.y;
     }
 
     @Override
