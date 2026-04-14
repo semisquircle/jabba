@@ -12,7 +12,7 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.util.Vector;
 
-public class CannonVSBall implements ActionListener, AdjustmentListener, WindowListener, ItemListener, MouseListener, MouseMotionListener
+public class CannonVSBall implements ActionListener, AdjustmentListener, ComponentListener, WindowListener, ItemListener, MouseListener, MouseMotionListener
 {
     // Frame/layout
     private int sw = 650, sh = 480;
@@ -91,6 +91,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         sheet.add("South", controlPanel);
 
         sheet.setMenuBar(mmb);
+        sheet.addComponentListener(this);
         sheet.addWindowListener(this);
         sheet.setSize(sw, sh);
         sheet.setResizable(true);
@@ -375,6 +376,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         {
             if      (source == mercuryItem) Ball.setGravity(12.1);
             else if (source == venusItem)   Ball.setGravity(29.1);
+            else if (source == earthItem)   Ball.setGravity(initGravity);
             else if (source == moonItem)    Ball.setGravity(5.3);
             else if (source == marsItem)    Ball.setGravity(12.5);
             else if (source == jupiterItem) Ball.setGravity(81.3);
@@ -382,7 +384,6 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
             else if (source == uranusItem)  Ball.setGravity(28.5);
             else if (source == neptuneItem) Ball.setGravity(36.6);
             else if (source == plutoItem)   Ball.setGravity(2.1);
-            else Ball.setGravity(initGravity);
             mercuryItem.setState(false);
             venusItem.setState(false);
             earthItem.setState(false);
@@ -415,6 +416,16 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         Ball.repaint();
     }
 
+    public Dimension getMinFrameSize()
+    {
+        Dimension canvasMin = Ball.getMinCanvasSize();
+        Dimension controlSize = controlPanel.getPreferredSize();
+        Insets insets = sheet.getInsets();
+        int width = Math.max(canvasMin.width, controlSize.width) + insets.left + insets.right;
+        int height = canvasMin.height + controlSize.height + insets.top + insets.bottom;
+        return new Dimension(width, height);
+    }
+
     // Window listeners
     public void windowClosing(WindowEvent e) { stop(); }
     public void windowClosed(WindowEvent e) {}
@@ -425,7 +436,14 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
     public void windowDeiconified(WindowEvent e) {}
 
     // Component listeners
-    public void componentResized(ComponentEvent e) {}
+    public void componentResized(ComponentEvent e)
+    {
+        Dimension min = getMinFrameSize();
+        int w = sheet.getWidth();
+        int h = sheet.getHeight();
+        if (w < min.width || h < min.height)
+            sheet.setSize(Math.max(w, min.width), Math.max(h, min.height));
+    }
     public void componentMoved(ComponentEvent e) {}
     public void componentShown(ComponentEvent e) {}
     public void componentHidden(ComponentEvent e) {}
@@ -455,14 +473,23 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         Ball.repaint();
     }
     public void mouseMoved(MouseEvent e) {}
-    public void mouseDragged(MouseEvent e) {}
+    public void mouseDragged(MouseEvent e)
+    {
+        Ball.setDragBox(new Rectangle(
+            Math.min(Ball.dragStart.x, e.getX()),
+            Math.min(Ball.dragStart.y, e.getY()),
+            Math.abs(e.getX() - Ball.dragStart.x),
+            Math.abs(e.getY() - Ball.dragStart.y)
+        ));
+        Ball.repaint();
+    }
     public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}
 }
 
 class Ballc extends Canvas
 {
-    // Off-screen double buffer
+    // Double buffer
     private Image buffer;
     private Graphics g;
 
@@ -499,7 +526,7 @@ class Ballc extends Canvas
     private String statusMsg = "";
 
     // Walls
-    private Point dragStart = null;
+    public Point dragStart = null;
     public Vector<Rectangle> walls = new Vector<Rectangle>();
     private Rectangle dragBox = null;
 
@@ -651,6 +678,23 @@ class Ballc extends Canvas
     public void addOne(Rectangle r) { walls.addElement(new Rectangle(r)); }
     public void removeOne(int i) { walls.removeElementAt(i); }
     public Rectangle getOne(int i) { return walls.elementAt(i); }
+    public Rectangle getWallsBounds()
+    {
+        if (walls.isEmpty()) return new Rectangle(0, 0, 0, 0);
+        Rectangle r = new Rectangle(walls.firstElement());
+        for (Rectangle w : walls)
+        {
+            r = r.union(w);
+        }
+        return r;
+    }
+    public Dimension getMinCanvasSize()
+    {
+        Rectangle wallsBounds = getWallsBounds();
+        int minWidth = Math.max(canvasWidth, wallsBounds.x + wallsBounds.width + 20);
+        int minHeight = Math.max(canvasHeight, wallsBounds.y + wallsBounds.height + 20);
+        return new Dimension(minWidth, minHeight);
+    }
 
     // Calculates initial velocity components from angle and spawns projectile at barrel tip
     public void fireProjectile()
