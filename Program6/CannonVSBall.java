@@ -100,6 +100,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         Ball.repaint();
     }
 
+    // UI initializations
     public void initMenu()
     {
         controlMenu = new Menu("Control");
@@ -169,7 +170,6 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         neptuneItem.addItemListener(this);
         plutoItem.addItemListener(this);
     }
-
     public void initControls() throws Exception, IOException
     {
         gbc.insets = new Insets(2, 10, 2, 10);
@@ -226,8 +226,8 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         controlPanel.validate();
     }
 
-    // Starts the game loop on a background thread
-    public void startAnimation()
+    // Game loop
+    public void run()
     {
         if (!running) {
             running = true;
@@ -263,10 +263,8 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
             animThread.start();
         }
     }
-
-    public void pauseAnimation() { running = false; }
-
-    public void restartGame()
+    public void pause() { running = false; }
+    public void restart()
     {
         running = false;
 
@@ -287,9 +285,8 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
 
         Ball.resetAll();
 
-        startAnimation();
+        run();
     }
-
     public void stop()
     {
         running = false;
@@ -326,15 +323,15 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         sheet.dispose();
     }
 
+    // Menu + control panel listeners
     public void actionPerformed(ActionEvent e)
     {
         Object source = e.getSource();
-        if (source == runItem) startAnimation();
-        if (source == pauseItem) pauseAnimation();
-        if (source == restartItem) restartGame();
+        if (source == runItem) run();
+        if (source == pauseItem) pause();
+        if (source == restartItem) restart();
         if (source == quitItem) stop();
     }
-
     public void itemStateChanged(ItemEvent e)
     {
         CheckboxMenuItem source = (CheckboxMenuItem) e.getSource();
@@ -399,7 +396,6 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
             source.setState(true);
         }
     }
-
     public void adjustmentValueChanged(AdjustmentEvent e)
     {
         Scrollbar source = (Scrollbar) e.getSource();
@@ -419,6 +415,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
         Ball.repaint();
     }
 
+    // Window listeners
     public void windowClosing(WindowEvent e) { stop(); }
     public void windowClosed(WindowEvent e) {}
     public void windowOpened(WindowEvent e) {}
@@ -427,11 +424,13 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
     public void windowIconified(WindowEvent e) {}
     public void windowDeiconified(WindowEvent e) {}
 
+    // Component listeners
     public void componentResized(ComponentEvent e) {}
     public void componentMoved(ComponentEvent e) {}
     public void componentShown(ComponentEvent e) {}
     public void componentHidden(ComponentEvent e) {}
 
+    // Mouse listeners
     public void mouseClicked(MouseEvent e)
     {
         if (e.getClickCount() == 1)
@@ -439,7 +438,7 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
             if (Ball.getCannonBounds().contains(e.getPoint()))
             {
                 Ball.fireProjectile();
-                if (!running) startAnimation();
+                if (!running) run();
             }
         }
         if (e.getClickCount() == 2)
@@ -464,8 +463,8 @@ public class CannonVSBall implements ActionListener, AdjustmentListener, WindowL
 class Ballc extends Canvas
 {
     // Off-screen double buffer
-    Image buffer;
-    Graphics g;
+    private Image buffer;
+    private Graphics g;
 
     private int canvasWidth;
     private int canvasHeight;
@@ -516,16 +515,31 @@ class Ballc extends Canvas
         resetBall();
     }
 
+    // Canvas
+    @Override
+    public void setBounds(int x, int y, int w, int h) {
+        super.setBounds(x, y, w, h);
+        canvasWidth = w;
+        canvasHeight = h;
+        buffer = createImage(w, h);
+        g = buffer.getGraphics();
+    }
+    public void reSize(int w, int h)
+    {
+        canvasWidth = w;
+        canvasHeight = h;
+    }
+
     // Getters
-    public boolean playerScored() { return projScored; }
-    public boolean ballScored() { return ballHitCannon; }
-    public String getStatusMessage() { return statusMsg; }
     public Rectangle getCannonBounds() {
         Rectangle barrelBounds = poly.getBounds();
         return new Rectangle(barrelBounds.x, barrelBounds.y,
             barrelBounds.width + (canvasWidth - ax2), barrelBounds.height + (canvasHeight - ay1));
     }
     public Rectangle getBallBounds() { return new Rectangle((int) ballX, (int) ballY, ballSize, ballSize); }
+    public boolean playerScored() { return projScored; }
+    public boolean ballScored() { return ballHitCannon; }
+    public String getStatusMessage() { return statusMsg; }
 
     // Setters
     public void setBallSize(int s) { ballSize = s; }
@@ -563,20 +577,6 @@ class Ballc extends Canvas
         repaint();
     }
     public void clearBallScored() { ballHitCannon = false; }
-
-    @Override
-    public void setBounds(int x, int y, int w, int h)
-    {
-        super.setBounds(x, y, w, h);
-        canvasWidth  = w;
-        canvasHeight = h;
-    }
-
-    public void reSize(int w, int h)
-    {
-        canvasWidth = w;
-        canvasHeight = h;
-    }
 
     public void drawCannon(Graphics g)
     {
@@ -629,24 +629,26 @@ class Ballc extends Canvas
     public void startDrag(Point p) { dragStart = p; dragBox = null; }
     public void endDrag(Point end)
     {
-        // Finalizes a rectangle drag. Prevents drawing outside of canvas and overlap with ball or cannon
-        if (dragStart == null) return;
-        int x = Math.min(dragStart.x, end.x);
-        int y = Math.min(dragStart.y, end.y);
-        int w = Math.abs(end.x - dragStart.x);
-        int h = Math.abs(end.y - dragStart.y);
-        dragStart = null;
-        dragBox = null;
-        if (w < 4 || h < 4) return;
-
-        Rectangle newRect = new Rectangle(x, y, w, h);
-        Rectangle canvas = new Rectangle(0, 0, canvasWidth, canvasHeight);
-        if (!canvas.contains(newRect)) return;
-        if (newRect.intersects(getBallBounds())) return;
-        if (newRect.intersects(getCannonBounds())) return;
-
-        walls.removeIf(existing -> newRect.contains(existing));
-        walls.addElement(newRect);
+        if (dragStart == null) dragBox = null;
+        else
+        {
+            int x = Math.min(dragStart.x, end.x);
+            int y = Math.min(dragStart.y, end.y);
+            int w = Math.abs(end.x - dragStart.x);
+            int h = Math.abs(end.y - dragStart.y);
+            dragStart = null;
+            dragBox = null;
+            if (w >= 4 && h >= 4)
+            {
+                Rectangle newRect = new Rectangle(x, y, w, h);
+                Rectangle canvas = new Rectangle(0, 0, canvasWidth, canvasHeight);
+                if (canvas.contains(newRect) && !newRect.intersects(getBallBounds()) && !newRect.intersects(getCannonBounds()))
+                {
+                    walls.removeIf(existing -> newRect.contains(existing));
+                    walls.addElement(newRect);
+                }
+            }
+        }
     }
     public void addOne(Rectangle r) { walls.addElement(new Rectangle(r)); }
     public void removeOne(int i) { walls.removeElementAt(i); }
@@ -672,37 +674,30 @@ class Ballc extends Canvas
 
     public void paint(Graphics cg)
     {
-        canvasWidth = getWidth();
-        canvasHeight = getHeight();
-
-        buffer = createImage(canvasWidth, canvasHeight);
-        if (g != null) g.dispose();
-        g = buffer.getGraphics();
+        if (buffer == null) {
+            buffer = createImage(canvasWidth, canvasHeight);
+            g = buffer.getGraphics();
+        }
 
         g.setColor(Color.white);
         g.fillRect(0, 0, canvasWidth, canvasHeight);
 
         g.setColor(Color.yellow);
-        for (int i = 0; i < walls.size(); i++)
-        {
-            Rectangle temp = walls.elementAt(i);
+        for (Rectangle temp : walls) {
             g.fillRect(temp.x, temp.y, temp.width, temp.height);
         }
 
-        if (dragBox != null && dragBox.width > 0 && dragBox.height > 0)
-        {
+        if (dragBox != null && dragBox.width > 0 && dragBox.height > 0) {
             g.setColor(Color.darkGray);
             g.drawRect(dragBox.x, dragBox.y, dragBox.width, dragBox.height);
         }
 
-        if (ballAlive)
-        {
+        if (ballAlive) {
             g.setColor(Color.red);
             g.fillOval((int) ballX, (int) ballY, ballSize, ballSize);
         }
 
-        if (projActive)
-        {
+        if (projActive) {
             g.setColor(Color.black);
             g.fillOval((int) projX - projSize / 2, (int) projY - projSize / 2, projSize, projSize);
         }
@@ -711,6 +706,7 @@ class Ballc extends Canvas
 
         cg.drawImage(buffer, 0, 0, null);
     }
+    
     // Called once per frame: moves the target ball, applies gravity to projectile, checks all collisions
     public void update()
     {
