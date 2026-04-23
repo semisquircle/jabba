@@ -37,7 +37,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
     public Chat()
     {
         setTitle("Chat");
-        setSize(600, 500);
+        setSize(640, 480);
         GridBagLayout gbl = new GridBagLayout();
         GridBagConstraints gbc = new GridBagConstraints();
         setLayout(gbl);
@@ -87,7 +87,6 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         gbc.gridy = 3;
         gbc.gridwidth = 1;
         add(serverPortField, gbc);
-
 
         // Change Host Button
         changeHostButton = new Button("Change Host");
@@ -145,7 +144,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         startServerButton.addActionListener(this);
         connectButton.addActionListener(this);
         disconnectButton.addActionListener(this);
-        messageField.addActionListener(this); // enter key sends
+        messageField.addActionListener(this);
 
         // Initial state
         sendButton.setEnabled(false);
@@ -179,7 +178,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
     public void actionPerformed(ActionEvent e)
     {
         Object source = e.getSource();
-        if (source == sendButton || source == messageField)
+        if (source == sendButton || source == messageField) // triggers on Enter keypress
         {
             sendMessage();
         }
@@ -235,6 +234,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
                 {
                     socket = serverSocket.accept();
                     setupStreams();
+
                     statusArea.append("Server: connection from " + port + "\n");
                     setTitle("Server: connection from " + port);
                 }
@@ -258,10 +258,11 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
             port = Integer.parseInt(serverPortField.getText());
 
             statusArea.append("Connecting to " + host + ":" + port + "\n");
+
             socket = new Socket(host, port);
             isServer = false;
-            
             setupStreams();
+
             statusArea.append("Client: connected to " + host + " at port " + port + "\n");
             setTitle("Client: connected to " + host + " at port " + port);
         }
@@ -271,19 +272,24 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         }
     }
 
+    // Network/thread initialization upon start
     private void setupStreams() throws IOException
     {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
+
+        thread = new Thread(this);
+        thread.start();
+
         connected = true;
+
         sendButton.setEnabled(true);
         disconnectButton.setEnabled(true);
         startServerButton.setEnabled(false);
         connectButton.setEnabled(false);
-        thread = new Thread(this);
-        thread.start();
     }
 
+    // Add a message to the chat area
     private void sendMessage()
     {
         if (connected)
