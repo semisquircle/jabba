@@ -1,5 +1,5 @@
 /*
-    Program name: Program 6, Cannon vs Ball Program
+    Program name: Program 6, Chat Application Program
     Course: CMSC 3320, Technical Computing Using Java
     Group: #3
     Members:
@@ -15,17 +15,9 @@ import java.net.*;
 public class Chat extends Frame implements ActionListener, Runnable {
 
     // GUI Components
-    private TextArea chatArea;       
-    private TextArea statusArea;      
-    private TextField messageField;   
-    private TextField serverPortField;
-    private TextField hostField;      
-    private TextField clientPortField;
-
-    private Button sendButton;
-    private Button serverButton;
-    private Button connectButton;
-    private Button closeButton;
+    private TextArea chatArea, statusArea;      
+    private TextField messageField, serverPortField, hostField, clientPortField;
+    private Button changeHostButton, changeClientButton, sendButton, serverButton, connectButton, closeButton;
 
     // Networking
     private ServerSocket serverSocket;
@@ -43,76 +35,116 @@ public class Chat extends Frame implements ActionListener, Runnable {
     public Chat() {
         setTitle("Chat Application");
         setSize(600, 500);
-        setLayout(new GridBagLayout());
+        GridBagLayout gbl = new GridBagLayout();
         GridBagConstraints gbc = new GridBagConstraints();
+        setLayout(gbl);
+        gbl.columnWeights = new double[] {0.5, 1.0, 0.5, 0.5};
 
         // Chat Area
         chatArea = new TextArea();
         chatArea.setEditable(false);
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         gbc.gridwidth = 4;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1; gbc.weighty = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
         add(chatArea, gbc);
 
-        // Message Label
-        gbc.gridy = 1; gbc.gridwidth = 1;
+        // Host Label
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
         gbc.weighty = 0;
-        add(new Label("Message:"), gbc);
+        add(new Label("Host:"), gbc);
+
+        // Port Label
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+        add(new Label("Server Port:"), gbc);
+
+        // Client Label
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 1;
+        add(new Label("Client Port:"), gbc);
 
         // Message Field
         messageField = new TextField();
-        gbc.gridx = 1; gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 3;
         add(messageField, gbc);
+
+        // Host Field
+        hostField = new TextField("localhost");
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        add(hostField, gbc);
+
+        // Server Field
+        serverPortField = new TextField("44004");
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+        add(serverPortField, gbc);
+
+        // Client Field
+        clientPortField = new TextField("44004");
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        gbc.gridwidth = 1;
+        add(clientPortField, gbc);
+
+        // Change Host Button
+        changeHostButton = new Button("Change Host");
+        gbc.gridx = 2;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        add(changeHostButton, gbc);
+
+        // Change Client Button
+        changeClientButton = new Button("Change Port");
+        gbc.gridx = 2;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+        add(changeClientButton, gbc);
 
         // Send Button
         sendButton = new Button("Send");
-        gbc.gridx = 3; gbc.gridwidth = 1;
+        gbc.gridx = 3;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
         add(sendButton, gbc);
-
-        // Server Port
-        gbc.gridx = 0; gbc.gridy = 2;
-        add(new Label("Server Port:"), gbc);
-
-        serverPortField = new TextField("44004");
-        gbc.gridx = 1;
-        add(serverPortField, gbc);
 
         // Server Button
         serverButton = new Button("Start Server");
-        gbc.gridx = 2;
-        add(serverButton, gbc);
-
-        // Host Field
-        gbc.gridx = 0; gbc.gridy = 3;
-        add(new Label("Host:"), gbc);
-
-        hostField = new TextField("localhost");
-        gbc.gridx = 1;
-        add(hostField, gbc);
-
-        // Client Port
-        gbc.gridx = 2;
-        add(new Label("Port:"), gbc);
-
-        clientPortField = new TextField("44004");
         gbc.gridx = 3;
-        add(clientPortField, gbc);
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        add(serverButton, gbc);
 
         // Connect Button
         connectButton = new Button("Connect");
-        gbc.gridx = 1; gbc.gridy = 4;
+        gbc.gridx = 3;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
         add(connectButton, gbc);
 
         // Close Button
         closeButton = new Button("Close");
-        gbc.gridx = 2;
+        gbc.gridx = 3;
+        gbc.gridy = 4;
+        gbc.gridwidth = 1;
         add(closeButton, gbc);
 
         // Status Area
         statusArea = new TextArea(3, 50);
         statusArea.setEditable(false);
-        gbc.gridx = 0; gbc.gridy = 5;
+        gbc.gridx = 0;
+        gbc.gridy = 5;
         gbc.gridwidth = 4;
         gbc.fill = GridBagConstraints.BOTH;
         add(statusArea, gbc);
