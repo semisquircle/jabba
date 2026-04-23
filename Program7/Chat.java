@@ -140,6 +140,8 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         add(statusArea, gbc);
 
         // Add listeners
+        changeHostButton.addActionListener(this);
+        changePortButton.addActionListener(this);
         sendButton.addActionListener(this);
         startServerButton.addActionListener(this);
         connectButton.addActionListener(this);
@@ -219,6 +221,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         }
     }
 
+    // Connection setup for server mode
     private void startServer()
     {
         try
@@ -250,6 +253,7 @@ public class Chat extends Frame implements ActionListener, WindowListener, Runna
         }
     }
 
+    // Connection setup for client mode
     private void startClient()
     {
         try
