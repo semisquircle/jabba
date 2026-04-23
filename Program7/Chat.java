@@ -12,28 +12,31 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 
-public class Chat extends Frame implements ActionListener, Runnable {
-
+public class Chat extends Frame implements ActionListener, WindowListener, Runnable
+{
     // GUI Components
     private TextArea chatArea, statusArea;      
     private TextField messageField, serverPortField, hostField;
-    private Button changeHostButton, changeClientButton, sendButton, serverButton, connectButton, closeButton;
+    private Button changeHostButton, changePortButton, sendButton, startServerButton, connectButton, disconnectButton;
 
     // Networking
     private ServerSocket serverSocket;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
+    private String host;
+    private int port;
 
     // Thread
     private Thread thread;
 
-    // Mode flags
+    // Connection flags
     private boolean isServer = false;
     private boolean connected = false;
 
-    public Chat() {
-        setTitle("Chat Application");
+    public Chat()
+    {
+        setTitle("Chat");
         setSize(600, 500);
         GridBagLayout gbl = new GridBagLayout();
         GridBagConstraints gbc = new GridBagConstraints();
@@ -62,7 +65,7 @@ public class Chat extends Frame implements ActionListener, Runnable {
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.gridwidth = 1;
-        add(new Label("Server Port:"), gbc);
+        add(new Label("Port:"), gbc);
 
         // Message Field
         messageField = new TextField();
@@ -72,7 +75,7 @@ public class Chat extends Frame implements ActionListener, Runnable {
         add(messageField, gbc);
 
         // Host Field
-        hostField = new TextField("localhost");
+        hostField = new TextField();
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.gridwidth = 1;
@@ -93,12 +96,12 @@ public class Chat extends Frame implements ActionListener, Runnable {
         gbc.gridwidth = 1;
         add(changeHostButton, gbc);
 
-        // Change Client Button
-        changeClientButton = new Button("Change Port");
+        // Change Port Button
+        changePortButton = new Button("Change Port");
         gbc.gridx = 2;
         gbc.gridy = 3;
         gbc.gridwidth = 1;
-        add(changeClientButton, gbc);
+        add(changePortButton, gbc);
 
         // Send Button
         sendButton = new Button("Send");
@@ -108,11 +111,11 @@ public class Chat extends Frame implements ActionListener, Runnable {
         add(sendButton, gbc);
 
         // Server Button
-        serverButton = new Button("Start Server");
+        startServerButton = new Button("Start Server");
         gbc.gridx = 3;
         gbc.gridy = 2;
         gbc.gridwidth = 1;
-        add(serverButton, gbc);
+        add(startServerButton, gbc);
 
         // Connect Button
         connectButton = new Button("Connect");
@@ -122,11 +125,11 @@ public class Chat extends Frame implements ActionListener, Runnable {
         add(connectButton, gbc);
 
         // Close Button
-        closeButton = new Button("Close");
+        disconnectButton = new Button("Disconnect");
         gbc.gridx = 3;
         gbc.gridy = 4;
         gbc.gridwidth = 1;
-        add(closeButton, gbc);
+        add(disconnectButton, gbc);
 
         // Status Area
         statusArea = new TextArea(3, 50);
@@ -139,158 +142,206 @@ public class Chat extends Frame implements ActionListener, Runnable {
 
         // Add listeners
         sendButton.addActionListener(this);
-        serverButton.addActionListener(this);
+        startServerButton.addActionListener(this);
         connectButton.addActionListener(this);
-        closeButton.addActionListener(this);
-
-        messageField.addActionListener(this); // Enter key sends
+        disconnectButton.addActionListener(this);
+        messageField.addActionListener(this); // enter key sends
 
         // Initial state
         sendButton.setEnabled(false);
-        closeButton.setEnabled(false);
-
-        // Window close
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                closeConnection();
-                dispose();
-                System.exit(0);
-            }
-        });
+        disconnectButton.setEnabled(false);
+        hostField.requestFocus();
 
         setVisible(true);
+        addWindowListener(this);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        Object source = e.getSource();
+    public static void main(String[] args)
+    {
+        new Chat();
+    }
 
-        if (source == serverButton) {
-            startServer();
-        } else if (source == connectButton) {
-            startClient();
-        } else if (source == sendButton || source == messageField) {
+    // Window listeners
+    public void windowClosing(WindowEvent e)
+    {
+        disconnect();
+        dispose();
+        System.exit(0);
+    }
+    public void windowClosed(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+
+    // Action listener
+    public void actionPerformed(ActionEvent e)
+    {
+        Object source = e.getSource();
+        if (source == sendButton || source == messageField)
+        {
             sendMessage();
-        } else if (source == closeButton) {
-            closeConnection();
+        }
+        else if (source == startServerButton)
+        {
+            startServer();
+            startServerButton.setEnabled(false);
+            connectButton.setEnabled(false);
+        }
+        else if (source == connectButton)
+        {
+            startClient();
+            startServerButton.setEnabled(false);
+            connectButton.setEnabled(false);
+        }
+        else if (source == disconnectButton)
+        {
+            disconnect();
             reset();
+        }
+        else if (source == changeHostButton)
+        {
+            disconnect();
+            if (connected)
+            {
+                if (isServer) startServer();
+                else startClient();
+            }
+        }
+        else if (source == changePortButton)
+        {
+            disconnect();
+            if (connected)
+            {
+                if (isServer) startServer();
+                else startClient();
+            }
         }
     }
 
-    private void startServer() {
-        try {
-            int port = Integer.parseInt(serverPortField.getText());
+    private void startServer()
+    {
+        try
+        {
+            port = Integer.parseInt(serverPortField.getText());
+
             serverSocket = new ServerSocket(port);
             isServer = true;
-
-            statusArea.append("Server waiting on port " + port + "\n");
+            statusArea.append("Server: listening on port " + port + "\n");
 
             new Thread(() -> {
                 try 
                 {
                     socket = serverSocket.accept();
-                    statusArea.append("Connection made with client\n");
                     setupStreams();
-                } catch (IOException ex) 
+                    statusArea.append("Server: connection from " + port + "\n");
+                    setTitle("Server: connection from " + port);
+                }
+                catch (IOException e) 
                 {
                     statusArea.append("Server error\n");
                 }
-}).start();
-
-        } catch (IOException ex) {
+            }).start();
+        }
+        catch (IOException e)
+        {
             statusArea.append("Server error\n");
         }
     }
 
-    private void startClient() {
-        try {
-            String host = hostField.getText();
-            int port = Integer.parseInt(serverPortField.getText());
+    private void startClient()
+    {
+        try
+        {
+            host = hostField.getText();
+            port = Integer.parseInt(serverPortField.getText());
 
-            statusArea.append("Requesting connection to " + host + "\n");
-
+            statusArea.append("Connecting to " + host + ":" + port + "\n");
             socket = new Socket(host, port);
             isServer = false;
-
-            statusArea.append("Connected to server\n");
-
+            
             setupStreams();
-
-        } catch (IOException ex) {
+            statusArea.append("Client: connected to " + host + " at port " + port + "\n");
+            setTitle("Client: connected to " + host + " at port " + port);
+        }
+        catch (IOException e)
+        {
             statusArea.append("Client error\n");
         }
     }
 
-    private void setupStreams() throws IOException {
+    private void setupStreams() throws IOException
+    {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
-
         connected = true;
-
         sendButton.setEnabled(true);
-        closeButton.setEnabled(true);
-        serverButton.setEnabled(false);
+        disconnectButton.setEnabled(true);
+        startServerButton.setEnabled(false);
         connectButton.setEnabled(false);
-
         thread = new Thread(this);
         thread.start();
     }
 
-    private void sendMessage() {
-        if (connected) {
+    private void sendMessage()
+    {
+        if (connected)
+        {
             String msg = messageField.getText();
             out.println(msg);
 
-            if (isServer) {
+            if (isServer)
                 chatArea.append("Server: " + msg + "\n");
-            } else {
+            else
                 chatArea.append("Client: " + msg + "\n");
-            }
 
             messageField.setText("");
         }
     }
 
-    public void run() {
-        try {
+    public void run()
+    {
+        try
+        {
             String msg;
-            while ((msg = in.readLine()) != null) {
-
-                if (isServer) {
+            while ((msg = in.readLine()) != null)
+            {
+                if (isServer)
                     chatArea.append("Client: " + msg + "\n");
-                } else {
+                else
                     chatArea.append("Server: " + msg + "\n");
-                }
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             statusArea.append("Connection closed\n");
         }
     }
 
-    private void closeConnection() {
-        try {
+    private void disconnect()
+    {
+        try
+        {
             connected = false;
-
             if (socket != null) socket.close();
             if (serverSocket != null) serverSocket.close();
-
             statusArea.append("Connection closed\n");
-
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             statusArea.append("Error closing connection\n");
         }
     }
 
-    private void reset() {
-        sendButton.setEnabled(false);
-        closeButton.setEnabled(false);
-        serverButton.setEnabled(true);
-        connectButton.setEnabled(true);
-
+    private void reset()
+    {
+        setTitle("Chat");
         chatArea.setText("");
-        statusArea.append("Reset complete\n");
-    }
-
-    public static void main(String[] args) {
-        new Chat();
+        sendButton.setEnabled(false);
+        startServerButton.setEnabled(true);
+        connectButton.setEnabled(true);
+        disconnectButton.setEnabled(false);
+        // statusArea.append("Reset complete\n");
     }
 }
