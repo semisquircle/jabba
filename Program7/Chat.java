@@ -16,7 +16,7 @@ public class Chat extends Frame implements ActionListener, Runnable {
 
     // GUI Components
     private TextArea chatArea, statusArea;      
-    private TextField messageField, serverPortField, hostField, clientPortField;
+    private TextField messageField, serverPortField, hostField;
     private Button changeHostButton, changeClientButton, sendButton, serverButton, connectButton, closeButton;
 
     // Networking
@@ -64,12 +64,6 @@ public class Chat extends Frame implements ActionListener, Runnable {
         gbc.gridwidth = 1;
         add(new Label("Server Port:"), gbc);
 
-        // Client Label
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 1;
-        add(new Label("Client Port:"), gbc);
-
         // Message Field
         messageField = new TextField();
         gbc.gridx = 0;
@@ -91,12 +85,6 @@ public class Chat extends Frame implements ActionListener, Runnable {
         gbc.gridwidth = 1;
         add(serverPortField, gbc);
 
-        // Client Field
-        clientPortField = new TextField("44004");
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        gbc.gridwidth = 1;
-        add(clientPortField, gbc);
 
         // Change Host Button
         changeHostButton = new Button("Change Host");
@@ -216,7 +204,7 @@ public class Chat extends Frame implements ActionListener, Runnable {
     private void startClient() {
         try {
             String host = hostField.getText();
-            int port = Integer.parseInt(clientPortField.getText());
+            int port = Integer.parseInt(serverPortField.getText());
 
             statusArea.append("Requesting connection to " + host + "\n");
 
