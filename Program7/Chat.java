@@ -196,10 +196,17 @@ public class Chat extends Frame implements ActionListener, Runnable {
 
             statusArea.append("Server waiting on port " + port + "\n");
 
-            socket = serverSocket.accept(); // Wait for client
-            statusArea.append("Connection made with client\n");
-
-            setupStreams();
+            new Thread(() -> {
+                try 
+                {
+                    socket = serverSocket.accept();
+                    statusArea.append("Connection made with client\n");
+                    setupStreams();
+                } catch (IOException ex) 
+                {
+                    statusArea.append("Server error\n");
+                }
+}).start();
 
         } catch (IOException ex) {
             statusArea.append("Server error\n");
