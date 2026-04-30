@@ -3,4 +3,5 @@
 **/*.o
 **/*.class
 
-!**/Program8.exe
+!Program8/**/*.class
+!Program8/**/*.exe
