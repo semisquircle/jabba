@@ -2,3 +2,5 @@
 **/*.exe
 **/*.o
 **/*.class
+
+!**/Program8.exe
