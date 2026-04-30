@@ -1,4 +1,3 @@
-? force include classes (no manifest)
 javac -cp . spatter/SpatterApplication.java
 jar cfe SpatterApplication.jar spatter.SpatterApplication spatter/*.class EDU/emporia/mathbeans/*.class EDU/emporia/mathtools/*.class
 java -jar SpatterApplication.jar
